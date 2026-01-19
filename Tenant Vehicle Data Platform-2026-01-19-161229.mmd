@@ -1,0 +1,176 @@
+---
+config:
+  layout: elk
+---
+erDiagram
+	direction TB
+
+	TENANTS {
+		UUID id PK "Identificador del tenant"
+		varchar nombre
+		varchar dominio
+	}
+
+	USUARIOS {
+		UUID id PK
+		UUID tenant_id FK
+		varchar email
+		varchar nombre_completo
+		boolean activo
+	}
+
+	ROLES {
+		UUID id PK
+		UUID tenant_id FK
+		varchar nombre
+		jsonb permissions
+	}
+
+	USUARIO_ROLES {
+		UUID id PK
+		UUID tenant_id FK
+		UUID user_id FK
+		UUID role_id FK
+	}
+
+	VEHICULOS {
+		UUID id PK
+		UUID tenant_id FK
+		varchar vin
+		varchar matricula
+		varchar marca
+		varchar modelo
+		boolean activo
+	}
+
+	DISPOSITIVOS {
+		UUID id PK
+		UUID tenant_id FK
+		UUID vehicle_id FK
+		varchar imei
+		varchar sim
+		boolean activo
+	}
+
+	PUNTOS_TELEMETRIA {
+		bigserial id PK
+		UUID tenant_id FK
+		UUID dispositivo_id FK
+		timestamptz ts
+		numeric lat
+		numeric lng
+		numeric velocidad_kmh
+	}
+
+	VIAJES {
+		UUID id PK
+		UUID tenant_id FK
+		UUID vehicle_id FK
+		UUID conductor_id FK
+		timestamptz inicio_ts
+		timestamptz fin_ts
+	}
+
+	ASIGNACIONES {
+		UUID id PK
+		UUID tenant_id FK
+		UUID vehicle_id FK
+		UUID user_id FK
+		timestamptz inicio_ts
+		timestamptz fin_ts
+	}
+
+	MANTENIMIENTOS {
+		UUID id PK
+		UUID tenant_id FK
+		UUID vehicle_id FK
+		text descripcion
+		timestamptz realizado_en
+	}
+
+	ALERTAS {
+		UUID id PK
+		UUID tenant_id FK
+		UUID vehicle_id FK
+		UUID dispositivo_id FK
+		varchar tipo
+		varchar severidad
+		UUID reconocido_por FK
+		timestamptz creado_en
+	}
+
+	GEOFENCAS {
+		UUID id PK
+		UUID tenant_id FK
+		varchar nombre
+		jsonb polygon
+	}
+
+	PLAN_VERSION {
+		UUID id PK
+		varchar plan_nombre
+		int version
+		numeric precio
+		jsonb features
+	}
+
+	SUSCRIPCIONES {
+		UUID id PK
+		UUID tenant_id FK
+		UUID plan_version_id FK
+		timestamptz inicio
+		timestamptz fin
+		varchar status
+		int seats
+		numeric price_snapshot
+		jsonb features_snapshot
+	}
+
+	FACTURAS {
+		UUID id PK
+		UUID tenant_id FK
+		UUID suscripcion_id FK
+		numeric importe
+		varchar estado
+		timestamptz emitida_en
+		timestamptz pagada_en
+	}
+
+	LOGS_AUDIT {
+		bigserial id PK
+		UUID tenant_id FK
+		UUID user_id FK
+		varchar entidad
+		UUID entidad_id
+		varchar accion
+		jsonb antes
+		jsonb despues
+		timestamptz ts
+	}
+
+	TENANTS ||--o{ USUARIOS : tiene
+	TENANTS ||--o{ VEHICULOS : posee
+	TENANTS ||--o{ DISPOSITIVOS : administra
+	TENANTS ||--o{ PUNTOS_TELEMETRIA : genera
+	TENANTS ||--o{ SUSCRIPCIONES : contrata
+	TENANTS ||--o{ FACTURAS : recibe
+	TENANTS ||--o{ MANTENIMIENTOS : registra
+	TENANTS ||--o{ ALERTAS : genera
+	TENANTS ||--o{ GEOFENCAS : define
+
+	USUARIOS ||--o{ USUARIO_ROLES : tiene
+	ROLES ||--o{ USUARIO_ROLES : asigna
+
+	USUARIOS ||--o{ VIAJES : conduce
+	USUARIOS ||--o{ ASIGNACIONES : participa
+	USUARIOS ||--o{ LOGS_AUDIT : origina
+
+	VEHICULOS ||--o{ DISPOSITIVOS : tiene
+	VEHICULOS ||--o{ VIAJES : genera
+	VEHICULOS ||--o{ MANTENIMIENTOS : recibe
+	VEHICULOS ||--o{ ASIGNACIONES : asignado
+
+	DISPOSITIVOS ||--o{ PUNTOS_TELEMETRIA : reporta
+
+	PLAN_VERSION ||--o{ SUSCRIPCIONES : define
+	SUSCRIPCIONES ||--o{ FACTURAS : genera
