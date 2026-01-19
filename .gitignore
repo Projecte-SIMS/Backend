@@ -1,30 +1,66 @@
-/vendor/
-node_modules/
-npm-debug.log
-yarn-error.log
-
-# Laravel 4 specific
-bootstrap/compiled.php
-app/storage/
-
-# Laravel 5 & Lumen specific
-public/storage
-public/hot
-
-# Laravel 5 & Lumen specific with changed public path
-public_html/storage
-public_html/hot
-
-storage/*.key
+*.log
+.DS_Store
 .env
-Homestead.yaml
-Homestead.json
-/.vagrant
-.phpunit.result.cache
 
+# Laravel
+/vendor/
+/node_modules/
+
+# Laravel storage and build
+/public/storage
+/public/hot
 /public/build
-/storage/pail
+/storage/*.key
+
+# IDE / OS files
+/.vagrant
+.idea/
+.vscode/
+.DS_Store
+
+# Composer
+/composer.lock
+
+# Logs and caches
+/storage/logs/
+/.phpunit.result.cache
+/.phpunit.cache
+
+# NPM/Yarn
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# SQLite databases
+*.sqlite
+*.sqlite3
+/database/*.sqlite
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Others
 .env.backup
+/.sass-cache
+
 .env.production
 .phpactor.json
-auth.json
+.phpunit.result.cache
+/.fleet
+/.idea
+/.nova
+/.phpunit.cache
+/.vscode
+/.zed
+/auth.json
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/vendor
+Homestead.json
+Homestead.yaml
+Thumbs.db
