@@ -16,7 +16,7 @@ WORKDIR /var/www/html
 COPY . /var/www/html
 
 # Install composer dependencies if composer.json exists
-RUN if [ -f /var/www/html/composer.json ]; then composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader; fi || true
+RUN if [ -f /var/www/html/composer.json ]; then composer install --prefer-dist --no-interaction --optimize-autoloader; fi || true
 
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache || true
 
