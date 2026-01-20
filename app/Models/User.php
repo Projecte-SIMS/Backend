@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Role;
 
 class User extends Authenticatable
 {
@@ -18,9 +19,11 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'username',
         'email',
         'password',
+        'active',
+        'role_id',
     ];
 
     /**
@@ -34,6 +37,15 @@ class User extends Authenticatable
     ];
 
     /**
+     * Relationship: user belongs to a role.
+     */
+    /* USE THIS WHEN ROLES ARE IMPLEMENTED
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+    */
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -43,6 +55,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'active' => 'boolean',
         ];
     }
 }
