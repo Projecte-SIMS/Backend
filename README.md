@@ -23,3 +23,11 @@ docker compose up -d --build
 ```bash
 docker compose exec app php artisan migrate --force
 ```
+
+## Migrations
+### Refresh migrations
+This will delete all the DB and exec all the migrations again:
+```bash
+docker compose exec app php artisan migrate:refresh --seed;
+```
+

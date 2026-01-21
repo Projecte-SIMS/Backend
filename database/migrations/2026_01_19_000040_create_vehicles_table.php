@@ -9,7 +9,6 @@ return new class extends Migration {
     {
         Schema::create('vehicles', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->uuid('uuid')->nullable()->unique();
             $table->string('license_plate')->unique();
             $table->string('brand')->nullable();
             $table->string('model')->nullable();

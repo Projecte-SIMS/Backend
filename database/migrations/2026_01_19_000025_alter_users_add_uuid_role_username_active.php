@@ -8,9 +8,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            if (!Schema::hasColumn('users', 'uuid')) {
-                $table->uuid('uuid')->nullable()->unique()->after('id');
-            }
+            // uuid column removed per new schema: ids are integers
             if (!Schema::hasColumn('users', 'username')) {
                 $table->string('username')->nullable()->after('email');
             }
@@ -37,10 +35,7 @@ return new class extends Migration {
             if (Schema::hasColumn('users', 'username')) {
                 $table->dropColumn('username');
             }
-            if (Schema::hasColumn('users', 'uuid')) {
-                $table->dropUnique(['uuid']);
-                $table->dropColumn('uuid');
-            }
+            // no uuid column to drop
         });
     }
 };
