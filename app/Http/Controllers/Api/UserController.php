@@ -23,6 +23,7 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6'],
@@ -40,6 +41,7 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $data = $request->validate([
+            'name' => ['sometimes', 'string', 'max:255'],
             'username' => ['sometimes', 'string', 'max:255'],
             'email' => [
                 'sometimes',
@@ -67,6 +69,6 @@ class UserController extends Controller
     {
         $user->delete();
 
-        return response()->json(null, 204);
+        return response()->json(User::all());
     }
 }
