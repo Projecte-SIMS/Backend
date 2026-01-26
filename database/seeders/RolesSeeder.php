@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class RolesSeeder extends Seeder
 {
@@ -13,19 +13,32 @@ class RolesSeeder extends Seeder
      */
     public function run(): void
     {
-        $now = now();
+        // Create roles
+        $adminRole = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+        $clientRole = Role::firstOrCreate(['name' => 'Client', 'guard_name' => 'web']);
+        $maintenanceRole = Role::firstOrCreate(['name' => 'Maintenance', 'guard_name' => 'web']);
 
-        $roles = [
-            ['name' => 'Admin'],
-            ['name' => 'Client'],
-            ['name' => 'Mantenaince'],
-        ];
+        // Assign permissions to Admin
+        $adminRole->givePermissionTo(Permission::all());
 
-        foreach ($roles as $role) {
-            DB::table('roles')->updateOrInsert(
-                ['name' => $role['name']],
-                ['created_at' => $now, 'updated_at' => $now]
-            );
-        }
+        // Assign permissions to Client
+        $clientRole->givePermissionTo([
+            'users.view',
+            'roles.view',
+            'vehicles.view',
+            'trips.view',
+            'trips.create',
+        ]);
+
+        // Assign permissions to Maintenance
+        $maintenanceRole->givePermissionTo([
+            'users.view',
+            'vehicles.view',
+            'vehicles.edit',
+            'maintenance.view',
+            'maintenance.create',
+            'maintenance.edit',
+            'maintenance.delete',
+        ]);
     }
 }

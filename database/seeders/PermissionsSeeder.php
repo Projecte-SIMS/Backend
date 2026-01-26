@@ -3,8 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Spatie\Permission\Models\Permission;
 
 class PermissionsSeeder extends Seeder
 {
@@ -13,22 +12,36 @@ class PermissionsSeeder extends Seeder
      */
     public function run(): void
     {
-        $now = now();
+        // Reset cached roles and permissions
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         $permissions = [
-            ['code' => 'users.can.view', 'description' => 'View users'],
-            ['code' => 'users.can.delete', 'description' => 'Delete users'],
-            ['code' => 'users.can.manage', 'description' => 'Manage users'],
-            ['code' => 'roles.can.view', 'description' => 'View roles'],
-            ['code' => 'roles.can.delete', 'description' => 'Delete roles'],
-            ['code' => 'roles.can.manage', 'description' => 'Manage roles'],
+            'users.view',
+            'users.create',
+            'users.edit',
+            'users.delete',
+            'users.manage',
+            'roles.view',
+            'roles.create',
+            'roles.edit',
+            'roles.delete',
+            'roles.manage',
+            'vehicles.view',
+            'vehicles.create',
+            'vehicles.edit',
+            'vehicles.delete',
+            'trips.view',
+            'trips.create',
+            'trips.edit',
+            'trips.delete',
+            'maintenance.view',
+            'maintenance.create',
+            'maintenance.edit',
+            'maintenance.delete',
         ];
 
-        foreach ($permissions as $perm) {
-            DB::table('permissions')->updateOrInsert(
-                ['code' => $perm['code']],
-                ['description' => $perm['description'], 'created_at' => $now, 'updated_at' => $now]
-            );
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
     }
 }
