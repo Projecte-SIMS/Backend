@@ -24,20 +24,18 @@ class RolesSeeder extends Seeder
         // Assign permissions to Client
         $clientRole->givePermissionTo([
             'users.view',
-            'roles.view',
             'vehicles.view',
             'trips.view',
-            'trips.create',
+            'trips.manage',
         ]);
 
         // Assign permissions to Maintenance
         $maintenanceRole->givePermissionTo([
             'users.view',
             'vehicles.view',
-            'vehicles.edit',
+            'vehicles.manage',
             'maintenance.view',
-            'maintenance.create',
-            'maintenance.edit',
+            'maintenance.manage',
             'maintenance.delete',
         ]);
     }

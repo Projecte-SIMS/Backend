@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        /*
         // Drop role_permissions table first (has foreign keys)
         Schema::dropIfExists('role_permissions');
         
@@ -19,6 +20,7 @@ return new class extends Migration
         
         // Drop roles table
         Schema::dropIfExists('roles');
+        */
     }
 
     /**
