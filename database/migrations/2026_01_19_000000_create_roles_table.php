@@ -9,7 +9,6 @@ return new class extends Migration {
     {
         Schema::create('roles', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->uuid('uuid')->nullable()->unique();
             $table->string('name');
             $table->timestamps();
         });

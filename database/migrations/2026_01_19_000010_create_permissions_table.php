@@ -9,7 +9,6 @@ return new class extends Migration {
     {
         Schema::create('permissions', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->uuid('uuid')->nullable()->unique();
             $table->string('code')->unique();
             $table->string('description')->nullable();
             $table->timestamps();

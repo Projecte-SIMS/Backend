@@ -12,14 +12,33 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-3) Install dependencies && generate key:
+3) Start app service
 
 ```bash
- docker compose exec app bash -lc "php -r 'copy(\"https://getcomposer.org/installer\", \"composer-setup.php\");' && php composer-setup.php --install-dir=/usr/local/bin --filename=composer && rm composer-setup.php || true; composer install --no-interaction || true; php artisan key:generate --force
+docker compose run --rm app composer install --no-interaction
 ```
 
-4) Execute migrations:
+4) Install dependencies:
+
+```bash
+docker compose exec app composer install --no-interaction
+```
+
+5) Generate app key:
+```bash
+docker compose exec app php artisan key:generate --force
+```
+
+6) Execute migrations:
 
 ```bash
 docker compose exec app php artisan migrate --force
 ```
+
+## Migrations
+### Refresh migrations
+This will delete all the DB and exec all the migrations again:
+```bash
+docker compose exec app php artisan migrate:refresh --seed;
+```
+
