@@ -9,7 +9,6 @@ return new class extends Migration {
     {
         Schema::create('maintenance', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->uuid('uuid')->nullable()->unique();
             $table->unsignedBigInteger('vehicle_id');
             $table->text('description')->nullable();
             $table->timestampTz('performed_at')->nullable();

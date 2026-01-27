@@ -31,7 +31,6 @@ return new class extends Migration
         // Recreate roles table
         Schema::create('roles', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->uuid('uuid')->nullable()->unique();
             $table->string('name');
             $table->timestamps();
         });
@@ -39,7 +38,6 @@ return new class extends Migration
         // Recreate permissions table
         Schema::create('permissions', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->uuid('uuid')->nullable()->unique();
             $table->string('code')->unique();
             $table->string('description')->nullable();
             $table->timestamps();
