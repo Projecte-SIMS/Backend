@@ -4,9 +4,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\VehicleController;
-use App\Http\Controllers\TicketController;
-use App\Http\Controllers\TicketMessageController;
 
 // Rutas públicas de autenticación
 Route::post('/login', [AuthController::class, 'login']);
