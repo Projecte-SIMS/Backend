@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\VehicleController;
+use App\Http\Controllers\ReservationController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
