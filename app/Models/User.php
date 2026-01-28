@@ -60,4 +60,13 @@ class User extends Authenticatable
             'active' => 'boolean',
         ];
     }
+    public function reservations()
+    {
+        return $this->hasMany(Reservation::class);
+    }
+
+    public function trips()
+    {
+        return $this->hasManyThrough(Trip::class, Reservation::class);
+    }
 }

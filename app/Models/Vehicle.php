@@ -21,4 +21,14 @@ class Vehicle extends Model
     protected $casts = [
         'active' => 'boolean',
     ];
+
+    public function reservations()
+    {
+        return $this->hasMany(Reservation::class);
+    }
+
+    public function isAvailable()
+    {
+        return $this->available && $this->reservations()->where('status', 'active')->doesntExist();
+    }
 }
