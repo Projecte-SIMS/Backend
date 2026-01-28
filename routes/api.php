@@ -20,8 +20,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('users', UserController::class);
     Route::apiResource('roles', RoleController::class);
     Route::apiResource('vehicles', VehicleController::class);
-    Route::apiResource('tickets', TicketController::class);
-
-    Route::post('ticket-messages', [TicketMessageController::class, 'store']);
-    Route::delete('ticket-messages/{message}', [TicketMessageController::class, 'destroy']);
+    Route::apiResource('tickets', App\Http\Controllers\Api\TicketController::class);
+    Route::post('tickets/{ticket}/messages', [App\Http\Controllers\Api\TicketController::class, 'storeMessage']);
 });
