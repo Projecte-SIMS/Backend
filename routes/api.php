@@ -9,12 +9,16 @@ use App\Http\Controllers\VehicleController;
 // Rutas públicas de autenticación
 Route::post('/login', [AuthController::class, 'login']);
 
+// Registro público: cualquiera puede crear un usuario (rol por defecto)
+Route::post('/users', [UserController::class, 'store']);
+
 // Rutas protegidas por autenticación
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
     
-    Route::apiResource('users', UserController::class);
+    // Las demás operaciones sobre users requieren autenticación
+    Route::apiResource('users', UserController::class)->except(['store']);
     Route::apiResource('roles', RoleController::class);
     Route::apiResource('vehicles', VehicleController::class);
 });
