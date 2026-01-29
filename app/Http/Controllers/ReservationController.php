@@ -95,5 +95,51 @@ class ReservationController extends Controller
                 'started_at' => $trip->engine_started_at
             ], 200);
         }
+        // FINALIZAR VIAJE
+        public function finish(Request $request, $id)
+        {
+            // 1. Buscar la reserva activa
+            $reservation = Reservation::where('id', $id)
+                ->where('user_id', $request->user()->id)
+                ->firstOrFail();
+
+            if ($reservation->status !== 'active') {
+                return response()->json(['message' => 'Solo puedes finalizar reservas activas.'], 400);
+            }
+
+            // 2. Buscar el viaje
+            $trip = Trip::where('reservation_id', $reservation->id)->firstOrFail();
+
+            // 3. Cálculos finales
+            $start = \Carbon\Carbon::parse($trip->engine_started_at);
+            $end = now();
+            
+            // Calculamos minutos (redondeando hacia arriba)
+            $minutes = $start->diffInMinutes($end) + 1; 
+
+            // Precio: 0.15€ por minuto (puedes cambiarlo)
+            $pricePerMinute = 0.15;
+            $amount = $minutes * $pricePerMinute;
+
+            // 4. Guardar en Base de Datos
+            \DB::transaction(function () use ($reservation, $trip, $end, $amount, $minutes) {
+                
+                // Actualizamos el viaje con TUS columnas exactas
+                $trip->update([
+                    'engine_stopped_at' => $end,
+                    'total_amount' => $amount,      // <--- Aquí guardamos el precio
+                    'minutes_driven' => $minutes    // <--- Aquí los minutos
+                ]);
+
+                // Liberamos el coche (reserva completada)
+                $reservation->update(['status' => 'completed']);
+            });
+
+            return response()->json([
+                'message' => 'Viaje finalizado. ¡Gracias!',
+                'minutes' => $minutes,
+                'cost' => $amount . '€'
+            ]);
+        }
     }
 
