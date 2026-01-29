@@ -22,6 +22,8 @@ class Trip extends Model
     ];
 
     protected $casts = [
+        'total_amount' => 'float',
+        'minutes_driven' => 'integer',
         'engine_started_at' => 'datetime',
         'engine_stopped_at' => 'datetime',
     ];

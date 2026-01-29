@@ -111,18 +111,24 @@ class ReservationController extends Controller
             $trip = Trip::where('reservation_id', $reservation->id)->firstOrFail();
 
             // 3. Cálculos finales
-            $start = \Carbon\Carbon::parse($trip->engine_started_at);
+            $start = Carbon::parse($trip->engine_started_at);
             $end = now();
-            
-            // Calculamos minutos (redondeando hacia arriba)
-            $minutes = $start->diffInMinutes($end) + 1; 
+
+            // Usamos floatDiffInMinutes para precisión y redondeamos hacia arriba (cobrar minuto completo)
+            // Casteamos a (int) porque la columna de BD 'minutes_driven' es integer
+            $minutes = (int) ceil($start->floatDiffInMinutes($end));
+
+            // Mínimo 1 minuto
+            if ($minutes < 1) {
+                $minutes = 1;
+            }
 
             // Precio: 0.15€ por minuto (puedes cambiarlo)
             $pricePerMinute = 0.15;
-            $amount = $minutes * $pricePerMinute;
+            $amount = round($minutes * $pricePerMinute, 2);
 
             // 4. Guardar en Base de Datos
-            \DB::transaction(function () use ($reservation, $trip, $end, $amount, $minutes) {
+            DB::transaction(function () use ($reservation, $trip, $end, $amount, $minutes) {
                 
                 // Actualizamos el viaje con TUS columnas exactas
                 $trip->update([

@@ -18,5 +18,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('vehicles', VehicleController::class);
     Route::post('/reservations', [ReservationController::class, 'store']);
     Route::post('/reservations/{id}/activate', [ReservationController::class, 'activate']);
-    Route::post('/reservations/{id}/finish', [App\Http\Controllers\ReservationController::class, 'finish']);
+    Route::post('/reservations/{id}/finish', [ReservationController::class, 'finish']);
 });
