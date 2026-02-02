@@ -11,29 +11,29 @@ return new class extends Migration
         Schema::create('reservations', function (Blueprint $table) {
             $table->id();
             
-            // RELACIONES
+            // RELATIONS
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('vehicle_id')->constrained()->onDelete('cascade');
 
-            // FECHAS
-            // scheduled_start: Cuándo quiere el coche.
+            // DATES
+            // scheduled_start: When they want the car.
             $table->timestamp('scheduled_start'); 
             
-            // activation_deadline: Tiempo límite para recoger el coche (Start + 20min).
+            // activation_deadline: Limit time to pick up the car (Start + 20min).
             $table->timestamp('activation_deadline')->nullable();
             
-            // CANCELACIONES
-            $table->timestamp('cancelled_at')->nullable(); // Fecha de cancelación
+            // CANCELLATIONS
+            $table->timestamp('cancelled_at')->nullable(); // Cancellation date
             
-            // --- NUEVA COLUMNA ---
-            // Aquí guardamos la multa si cancela con menos de 24h de antelación.
-            // Es nullable porque si el viaje se completa normal, esto estará vacío.
+            // --- NEW COLUMN ---
+            // Here we store the fee if cancelled with less than 24h notice.
+            // Nullable because if the trip is completed normally, this will be empty.
             $table->decimal('cancellation_fee', 8, 2)->nullable();
 
-            // ESTADO
+            // STATUS
             $table->enum('status', ['pending', 'active', 'expired', 'completed', 'cancelled'])->default('pending');
 
-            $table->timestamps(); // created_at y updated_at
+            $table->timestamps(); // created_at and updated_at
             $table->softDeletes();
         });
     }

@@ -11,20 +11,20 @@ use Illuminate\Http\Request;
 class VehicleController extends Controller
 {
     /**
-     * Lista paginada de vehículos con filtros
+     * Paginated list of vehicles with filters
      * 
-     * Filtros disponibles:
-     * - search: busca por license_plate, brand o model
-     * - license_plate: filtro exacto por matrícula
-     * - brand: filtro por marca
-     * - model: filtro por modelo
-     * - active: filtro por estado activo (true/false)
+     * Available filters:
+     * - search: search by license_plate, brand or model
+     * - license_plate: exact filter by license plate
+     * - brand: filter by brand
+     * - model: filter by model
+     * - active: filter by active status (true/false)
      */
     public function index(Request $request): JsonResponse
     {
         $query = Vehicle::query();
 
-        // Búsqueda general por license_plate, brand o model
+        // General search by license_plate, brand or model
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
@@ -34,7 +34,7 @@ class VehicleController extends Controller
             });
         }
 
-        // Filtros específicos
+        // Specific filters
         if ($request->filled('license_plate')) {
             $query->where('license_plate', 'ILIKE', "%{$request->input('license_plate')}%");
         }
@@ -58,20 +58,20 @@ class VehicleController extends Controller
     }
 
     /**
-     * Crear un nuevo vehículo
+     * Create a new vehicle
      */
     public function store(StoreVehicleRequest $request): JsonResponse
     {
         $vehicle = Vehicle::create($request->validated());
 
         return response()->json([
-            'message' => 'Vehículo creado correctamente',
+            'message' => 'Vehicle created successfully',
             'data' => $vehicle,
         ], 201);
     }
 
     /**
-     * Mostrar un vehículo específico
+     * Show a specific vehicle
      */
     public function show(Vehicle $vehicle): JsonResponse
     {
@@ -81,27 +81,27 @@ class VehicleController extends Controller
     }
 
     /**
-     * Actualizar un vehículo
+     * Update a vehicle
      */
     public function update(UpdateVehicleRequest $request, Vehicle $vehicle): JsonResponse
     {
         $vehicle->update($request->validated());
 
         return response()->json([
-            'message' => 'Vehículo actualizado correctamente',
+            'message' => 'Vehicle updated successfully',
             'data' => $vehicle,
         ]);
     }
 
     /**
-     * Eliminar un vehículo (soft delete)
+     * Delete a vehicle (soft delete)
      */
     public function destroy(Vehicle $vehicle): JsonResponse
     {
         $vehicle->delete();
 
         return response()->json([
-            'message' => 'Vehículo eliminado correctamente',
+            'message' => 'Vehicle deleted successfully',
         ]);
     }
 }

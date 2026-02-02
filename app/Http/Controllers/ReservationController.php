@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 class ReservationController extends Controller
 {
-    // 1. CREAR RESERVA
+    // 1. CREATE RESERVATION
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -22,16 +22,16 @@ class ReservationController extends Controller
         $vehicle = Vehicle::find($validated['vehicle_id']);
         $requestedStart = Carbon::parse($validated['scheduled_start']);
 
-        // Verificar disponibilidad
+        // Check availability
         $isBusy = Reservation::where('vehicle_id', $vehicle->id)
             ->whereIn('status', ['pending', 'active'])
             ->exists();
 
         if ($isBusy) {
-            return response()->json(['message' => 'Vehículo no disponible.'], 409);
+            return response()->json(['message' => 'Vehicle not available.'], 409);
         }
 
-        // 20 minutos de cortesía para llegar al coche
+        // 20 minutes courtesy time to reach the car
         $activationDeadline = $requestedStart->copy()->addMinutes(20);
 
         $reservation = Reservation::create([
@@ -43,12 +43,12 @@ class ReservationController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Reserva creada. Tienes 20 min para activar el vehículo.',
+            'message' => 'Reservation created. You have 20 min to activate the vehicle.',
             'data' => $reservation
         ], 201);
     }
 
-    // 2. ACTIVAR (ENCENDER MOTOR)
+    // 2. ACTIVATE (START ENGINE)
     public function activate(Request $request, $id)
     {
         $reservation = Reservation::where('id', $id)
@@ -56,16 +56,16 @@ class ReservationController extends Controller
             ->firstOrFail();
 
         if ($reservation->status !== 'pending') {
-            return response()->json(['message' => 'Solo reservas pendientes.'], 400);
+            return response()->json(['message' => 'Only pending reservations.'], 400);
         }
 
-        // Si llega tarde (>20 min)
+        // If late (>20 min)
         if (now()->greaterThan($reservation->activation_deadline)) {
             $reservation->update(['status' => 'expired']);
-            return response()->json(['message' => 'Tiempo de cortesía expirado.'], 403);
+            return response()->json(['message' => 'Courtesy time expired.'], 403);
         }
 
-        // Iniciar viaje
+        // Start trip
         $trip = DB::transaction(function () use ($reservation) {
             $reservation->update(['status' => 'active']);
             return Trip::create([
@@ -75,12 +75,12 @@ class ReservationController extends Controller
         });
 
         return response()->json([
-            'message' => '¡Motor encendido! Buen viaje.',
+            'message' => 'Engine started! Have a good trip.',
             'trip_id' => $trip->id
         ]);
     }
 
-    // 3. FINALIZAR VIAJE (PAGAR)
+    // 3. FINISH TRIP (PAY)
     public function finish(Request $request, $id)
     {
         $reservation = Reservation::where('id', $id)
@@ -88,18 +88,18 @@ class ReservationController extends Controller
             ->firstOrFail();
 
         if ($reservation->status !== 'active') {
-            return response()->json(['message' => 'La reserva no está activa.'], 400);
+            return response()->json(['message' => 'Reservation is not active.'], 400);
         }
 
         $trip = Trip::where('reservation_id', $reservation->id)->firstOrFail();
         
-        // Cálculos
+        // Calculations
         $end = now();
         $start = Carbon::parse($trip->engine_started_at);
         $minutes = (int) ceil($start->floatDiffInMinutes($end));
         if ($minutes < 1) $minutes = 1;
 
-        $amount = round($minutes * 0.15, 2); // 0.15€ por minuto
+        $amount = round($minutes * 0.15, 2); // 0.15€ per minute
 
         DB::transaction(function () use ($reservation, $trip, $end, $amount, $minutes) {
             $trip->update([
@@ -111,13 +111,13 @@ class ReservationController extends Controller
         });
 
         return response()->json([
-            'message' => 'Viaje finalizado.',
+            'message' => 'Trip finished.',
             'cost' => $amount . '€',
             'minutes' => $minutes
         ]);
     }
 
-    // 4. CANCELAR (LÓGICA MULTA + PERIODO GRACIA)
+    // 4. CANCEL (FEE LOGIC + GRACE PERIOD)
     public function cancel(Request $request, $id)
     {
         $reservation = Reservation::where('id', $id)
@@ -125,7 +125,7 @@ class ReservationController extends Controller
             ->firstOrFail();
 
         if ($reservation->status !== 'pending') {
-            return response()->json(['message' => 'No se puede cancelar.'], 400);
+            return response()->json(['message' => 'Cannot cancel.'], 400);
         }
 
         $now = now();
@@ -137,7 +137,7 @@ class ReservationController extends Controller
 
         $fee = 0;
 
-        // MULTA SI: Faltan <24h Y han pasado >30 min desde que reservó
+        // FEE IF: Less than 24h left AND >30 min since booking
         if ($hoursUntilStart < 24 && $minutesSinceBooking > 30) {
             $fee = 5.00;
         }
@@ -149,9 +149,9 @@ class ReservationController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Reserva cancelada.',
+            'message' => 'Reservation cancelled.',
             'cancellation_fee' => $fee . '€',
-            'note' => $fee > 0 ? 'Cargo por cancelación tardía.' : 'Cancelación gratuita.'
+            'note' => $fee > 0 ? 'Late cancellation fee.' : 'Free cancellation.'
         ]);
     }
 }

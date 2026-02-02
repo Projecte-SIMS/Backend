@@ -10,38 +10,71 @@ use App\Http\Controllers\AdminReservationController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TicketMessageController;
 
+/*
+|--------------------------------------------------------------------------
+| Public Routes (No Token Required)
+|--------------------------------------------------------------------------
+*/
+
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::get('/login', function () {
     return response()->json(['message' => 'Unauthenticated.'], 401);
 })->name('login');
 
-// Registro público: cualquiera puede crear un usuario (rol por defecto)
+// User Registration (Open to everyone)
 Route::post('/users', [UserController::class, 'store']);
 
-// Rutas protegidas por autenticación
+
+/*
+|--------------------------------------------------------------------------
+| Protected Routes (Token Required)
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth:sanctum')->group(function () {
+
+    // --- AUTHENTICATION & PROFILE ---
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
+
+
+    // --- USER ZONE (CLIENT) ---
     
-    // Las demás operaciones sobre users requieren autenticación
-    Route::apiResource('users', UserController::class)->except(['store']);
-    Route::apiResource('roles', RoleController::class);
-    Route::apiResource('vehicles', VehicleController::class);
-    
-    // Reservations
+    // Vehicles: Using {vehicle} for automatic Model Binding
+    Route::get('/vehicles', [VehicleController::class, 'index']);
+    Route::get('/vehicles/{vehicle}', [VehicleController::class, 'show']); // <--- FIXED ✅
+
+    // Reservations: Standard flow
     Route::post('/reservations', [ReservationController::class, 'store']);
     Route::post('/reservations/{id}/activate', [ReservationController::class, 'activate']);
     Route::post('/reservations/{id}/finish', [ReservationController::class, 'finish']);
     Route::post('/reservations/{id}/cancel', [ReservationController::class, 'cancel']);
 
-    Route::prefix('admin')->group(function () {
-        Route::apiResource('reservations', AdminReservationController::class);
-        Route::post('/reservations/{id}/force-finish', [AdminReservationController::class, 'forceFinish']);
-    });
-
-    // Tickets
-    Route::apiResource('tickets', TicketController::class);
+    // Tickets: Create issues and view own tickets
+    Route::apiResource('tickets', TicketController::class)->except(['update', 'destroy']);
     Route::post('tickets/{ticket}/messages', [TicketMessageController::class, 'store']);
     Route::delete('tickets/{ticket}/messages/{message}', [TicketMessageController::class, 'destroy']);
+
+
+    // --- ADMIN ZONE (MANAGEMENT PANEL) ---
+    // Everything below requires management permissions
+    Route::prefix('admin')->group(function () {
+        
+        // Reservations Dashboard (Full CRUD + Force Finish)
+        Route::apiResource('reservations', AdminReservationController::class);
+        Route::post('/reservations/{id}/force-finish', [AdminReservationController::class, 'forceFinish']);
+
+        // User Management (List, Edit, Delete users)
+        Route::apiResource('users', UserController::class)->except(['store']);
+        
+        // Role Management (Admin only)
+        Route::apiResource('roles', RoleController::class);
+
+        // Vehicle Management (Create, Edit, Delete vehicles)
+        // Here we also use {vehicle} for consistency in Model Binding
+        Route::post('/vehicles', [VehicleController::class, 'store']);
+        Route::put('/vehicles/{vehicle}', [VehicleController::class, 'update']);
+        Route::delete('/vehicles/{vehicle}', [VehicleController::class, 'destroy']);
+    });
+
 });
