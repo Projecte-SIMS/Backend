@@ -16,6 +16,7 @@ class Reservation extends Model
         'scheduled_start',
         'activation_deadline',
         'cancelled_at',
+        'cancellation_fee',
         'status'
     ];
 
@@ -23,7 +24,9 @@ class Reservation extends Model
         'scheduled_start' => 'datetime',
         'activation_deadline' => 'datetime',
         'cancelled_at' => 'datetime',
+        'cancellation_fee' => 'float',
     ];
+
 
     public function user()
     {
@@ -38,5 +41,10 @@ class Reservation extends Model
     public function trip()
     {
         return $this->hasOne(Trip::class);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->whereIn('status', ['pending', 'active']);
     }
 }

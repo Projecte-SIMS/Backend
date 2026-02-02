@@ -19,10 +19,12 @@ class Trip extends Model
         'minutes_driven',
         'start_location',
         'end_location',
+        'notes'
     ];
 
     protected $casts = [
         'total_amount' => 'float',
+        'penalty_amount' => 'float',
         'minutes_driven' => 'integer',
         'engine_started_at' => 'datetime',
         'engine_stopped_at' => 'datetime',
