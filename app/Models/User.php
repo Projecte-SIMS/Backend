@@ -8,12 +8,26 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use Spatie\Permission\Models\Role;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
     use HasRoles;
+
+    /**
+     * Assign a default role when a user is created if they have no role.
+     */
+    protected static function booted(): void
+    {
+        static::created(function (User $user) {
+            if ($user->roles->isEmpty()) {
+                $role = Role::firstOrCreate(['name' => 'Client']);
+                $user->assignRole($role);
+            }
+        });
+    }
 
     /**
      * The attributes that are mass assignable.
