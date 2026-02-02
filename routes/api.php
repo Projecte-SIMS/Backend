@@ -51,7 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/reservations/{id}/cancel', [ReservationController::class, 'cancel']);
 
     // Tickets: Create issues and view own tickets
-    Route::apiResource('tickets', TicketController::class)->except(['update', 'destroy']);
+    Route::apiResource('tickets', TicketController::class);
     Route::post('tickets/{ticket}/messages', [TicketMessageController::class, 'store']);
     Route::delete('tickets/{ticket}/messages/{message}', [TicketMessageController::class, 'destroy']);
 

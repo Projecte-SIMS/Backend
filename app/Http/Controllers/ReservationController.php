@@ -11,147 +11,141 @@ use Illuminate\Support\Facades\DB;
 
 class ReservationController extends Controller
 {
-    // 1. CREATE RESERVATION
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'vehicle_id' => 'required|exists:vehicles,id',
-            'scheduled_start' => 'required|date|after_or_equal:now',
-        ]);
-
-        $vehicle = Vehicle::find($validated['vehicle_id']);
-        $requestedStart = Carbon::parse($validated['scheduled_start']);
-
-        // Check availability
-        $isBusy = Reservation::where('vehicle_id', $vehicle->id)
-            ->whereIn('status', ['pending', 'active'])
-            ->exists();
-
-        if ($isBusy) {
-            return response()->json(['message' => 'Vehicle not available.'], 409);
-        }
-
-        // 20 minutes courtesy time to reach the car
-        $activationDeadline = $requestedStart->copy()->addMinutes(20);
-
-        $reservation = Reservation::create([
-            'user_id' => $request->user()->id,
-            'vehicle_id' => $vehicle->id,
-            'scheduled_start' => $requestedStart,
-            'activation_deadline' => $activationDeadline,
-            'status' => 'pending',
-        ]);
-
-        return response()->json([
-            'message' => 'Reservation created. You have 20 min to activate the vehicle.',
-            'data' => $reservation
-        ], 201);
-    }
-
-    // 2. ACTIVATE (START ENGINE)
-    public function activate(Request $request, $id)
-    {
-        $reservation = Reservation::where('id', $id)
-            ->where('user_id', $request->user()->id)
-            ->firstOrFail();
-
-        if ($reservation->status !== 'pending') {
-            return response()->json(['message' => 'Only pending reservations.'], 400);
-        }
-
-        // If late (>20 min)
-        if (now()->greaterThan($reservation->activation_deadline)) {
-            $reservation->update(['status' => 'expired']);
-            return response()->json(['message' => 'Courtesy time expired.'], 403);
-        }
-
-        // Start trip
-        $trip = DB::transaction(function () use ($reservation) {
-            $reservation->update(['status' => 'active']);
-            return Trip::create([
-                'reservation_id' => $reservation->id,
-                'engine_started_at' => now(),
+        // 1. CREAR RESERVA (POST /api/reservations)
+        public function store(Request $request)
+        {
+            // A. Validamos los datos que vienen de Postman
+            $validated = $request->validate([
+                'vehicle_id' => 'required|exists:vehicles,id',
+                'scheduled_start' => 'required|date|after_or_equal:now',
             ]);
-        });
 
-        return response()->json([
-            'message' => 'Engine started! Have a good trip.',
-            'trip_id' => $trip->id
-        ]);
-    }
+            $vehicle = Vehicle::find($validated['vehicle_id']);
+            $requestedStart = Carbon::parse($validated['scheduled_start']);
 
-    // 3. FINISH TRIP (PAY)
-    public function finish(Request $request, $id)
-    {
-        $reservation = Reservation::where('id', $id)
-            ->where('user_id', $request->user()->id)
-            ->firstOrFail();
+            // B. Comprobamos si el coche está ocupado (pending o active)
+            $isBusy = Reservation::where('vehicle_id', $vehicle->id)
+                ->whereIn('status', ['pending', 'active'])
+                ->exists();
 
-        if ($reservation->status !== 'active') {
-            return response()->json(['message' => 'Reservation is not active.'], 400);
-        }
+            if ($isBusy) {
+                return response()->json([
+                    'message' => 'Este vehículo no está disponible en este momento.'
+                ], 409); // 409 Conflict
+            }
 
-        $trip = Trip::where('reservation_id', $reservation->id)->firstOrFail();
-        
-        // Calculations
-        $end = now();
-        $start = Carbon::parse($trip->engine_started_at);
-        $minutes = (int) ceil($start->floatDiffInMinutes($end));
-        if ($minutes < 1) $minutes = 1;
+            // C. Calculamos el tiempo límite (20 minutos de cortesía)
+            $activationDeadline = $requestedStart->copy()->addMinutes(20);
 
-        $amount = round($minutes * 0.15, 2); // 0.15€ per minute
-
-        DB::transaction(function () use ($reservation, $trip, $end, $amount, $minutes) {
-            $trip->update([
-                'engine_stopped_at' => $end,
-                'total_amount' => $amount,
-                'minutes_driven' => $minutes
+            // D. Guardamos en la Base de Datos
+            // NOTA: Ya he quitado el campo 'price' para que no te de Error 500
+            $reservation = Reservation::create([
+                'user_id' => $request->user()->id,
+                'vehicle_id' => $vehicle->id,
+                'scheduled_start' => $requestedStart,
+                'activation_deadline' => $activationDeadline,
+                'status' => 'pending',
             ]);
-            $reservation->update(['status' => 'completed']);
-        });
 
-        return response()->json([
-            'message' => 'Trip finished.',
-            'cost' => $amount . '€',
-            'minutes' => $minutes
-        ]);
-    }
-
-    // 4. CANCEL (FEE LOGIC + GRACE PERIOD)
-    public function cancel(Request $request, $id)
-    {
-        $reservation = Reservation::where('id', $id)
-            ->where('user_id', $request->user()->id)
-            ->firstOrFail();
-
-        if ($reservation->status !== 'pending') {
-            return response()->json(['message' => 'Cannot cancel.'], 400);
+            return response()->json([
+                'message' => 'Reserva creada con éxito. Tienes 20 minutos para activar el vehículo.',
+                'data' => $reservation
+            ], 201);
         }
 
-        $now = now();
-        $scheduledStart = Carbon::parse($reservation->scheduled_start);
-        $createdAt = Carbon::parse($reservation->created_at);
+        // 2. ACTIVAR RESERVA / ENCENDER MOTOR (POST /api/reservations/{id}/activate)
+        public function activate(Request $request, $id)
+        {
+            // A. Buscamos la reserva y verificamos que sea del usuario
+            $reservation = Reservation::where('id', $id)
+                ->where('user_id', $request->user()->id)
+                ->firstOrFail();
 
-        $hoursUntilStart = $now->floatDiffInHours($scheduledStart, false);
-        $minutesSinceBooking = $now->diffInMinutes($createdAt);
+            // B. Verificamos que esté pendiente
+            if ($reservation->status !== 'pending') {
+                return response()->json([
+                    'message' => 'No se puede activar una reserva que no está pendiente.'
+                ], 400);
+            }
 
-        $fee = 0;
+            // C. LA REGLA DE ORO: ¿Ha llegado tarde? (Más de 20 min)
+            if (now()->greaterThan($reservation->activation_deadline)) {
+                
+                $reservation->update(['status' => 'expired']);
 
-        // FEE IF: Less than 24h left AND >30 min since booking
-        if ($hoursUntilStart < 24 && $minutesSinceBooking > 30) {
-            $fee = 5.00;
+                return response()->json([
+                    'message' => 'Has llegado tarde. El tiempo de cortesía ha expirado.'
+                ], 403);
+            }
+
+            // D. Todo correcto: Encendemos motor (Creamos Trip y actualizamos estado)
+            $trip = DB::transaction(function () use ($reservation) {
+                
+                $reservation->update(['status' => 'active']);
+
+                return Trip::create([
+                    'reservation_id' => $reservation->id,
+                    'engine_started_at' => now(),
+                ]);
+            });
+
+            return response()->json([
+                'message' => 'Vehículo activado correctamente. ¡Buen viaje!',
+                'trip_id' => $trip->id,
+                'started_at' => $trip->engine_started_at
+            ], 200);
         }
+        // FINALIZAR VIAJE
+        public function finish(Request $request, $id)
+        {
+            // 1. Buscar la reserva activa
+            $reservation = Reservation::where('id', $id)
+                ->where('user_id', $request->user()->id)
+                ->firstOrFail();
 
-        $reservation->update([
-            'status' => 'cancelled',
-            'cancelled_at' => $now,
-            'cancellation_fee' => $fee
-        ]);
+            if ($reservation->status !== 'active') {
+                return response()->json(['message' => 'Solo puedes finalizar reservas activas.'], 400);
+            }
 
-        return response()->json([
-            'message' => 'Reservation cancelled.',
-            'cancellation_fee' => $fee . '€',
-            'note' => $fee > 0 ? 'Late cancellation fee.' : 'Free cancellation.'
-        ]);
+            // 2. Buscar el viaje
+            $trip = Trip::where('reservation_id', $reservation->id)->firstOrFail();
+
+            // 3. Cálculos finales
+            $start = Carbon::parse($trip->engine_started_at);
+            $end = now();
+
+            // Usamos floatDiffInMinutes para precisión y redondeamos hacia arriba (cobrar minuto completo)
+            // Casteamos a (int) porque la columna de BD 'minutes_driven' es integer
+            $minutes = (int) ceil($start->floatDiffInMinutes($end));
+
+            // Mínimo 1 minuto
+            if ($minutes < 1) {
+                $minutes = 1;
+            }
+
+            // Precio: 0.15€ por minuto (puedes cambiarlo)
+            $pricePerMinute = 0.15;
+            $amount = round($minutes * $pricePerMinute, 2);
+
+            // 4. Guardar en Base de Datos
+            DB::transaction(function () use ($reservation, $trip, $end, $amount, $minutes) {
+                
+                // Actualizamos el viaje con TUS columnas exactas
+                $trip->update([
+                    'engine_stopped_at' => $end,
+                    'total_amount' => $amount,      // <--- Aquí guardamos el precio
+                    'minutes_driven' => $minutes    // <--- Aquí los minutos
+                ]);
+
+                // Liberamos el coche (reserva completada)
+                $reservation->update(['status' => 'completed']);
+            });
+
+            return response()->json([
+                'message' => 'Viaje finalizado. ¡Gracias!',
+                'minutes' => $minutes,
+                'cost' => $amount . '€'
+            ]);
+        }
     }
-}
+
