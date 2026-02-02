@@ -64,3 +64,8 @@ docker-compose.override.yml
 Homestead.json
 Homestead.yaml
 Thumbs.db
+inserts&tests
+postman_collection.json
+tmp_insert_test_user.php
+postman_collection_tickets.json
+tmp_insert_test_user_pg.sql
