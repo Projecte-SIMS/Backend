@@ -42,7 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Vehicles: Using {vehicle} for automatic Model Binding
     Route::get('/vehicles', [VehicleController::class, 'index']);
-    Route::get('/vehicles/{vehicle}', [VehicleController::class, 'show']); // <--- FIXED ✅
+    Route::get('/vehicles/{vehicle}', [VehicleController::class, 'show']); 
 
     // Reservations: Standard flow
     Route::post('/reservations', [ReservationController::class, 'store']);
@@ -51,14 +51,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/reservations/{id}/cancel', [ReservationController::class, 'cancel']);
 
     // Tickets: Create issues and view own tickets
-    Route::apiResource('tickets', TicketController::class);
+    // Limit to prevent user from deleting/editing main tickets, only view and create
+    Route::apiResource('tickets', TicketController::class)->except(['update', 'destroy']);
     Route::post('tickets/{ticket}/messages', [TicketMessageController::class, 'store']);
     Route::delete('tickets/{ticket}/messages/{message}', [TicketMessageController::class, 'destroy']);
 
 
     // --- ADMIN ZONE (MANAGEMENT PANEL) ---
     // Everything below requires management permissions
-    Route::prefix('admin')->group(function () {
+    // ADDED: middleware('role:Admin') to protect the entire group 🔒
+    Route::prefix('admin')
+        ->middleware('role:Admin') 
+        ->group(function () {
         
         // Reservations Dashboard (Full CRUD + Force Finish)
         Route::apiResource('reservations', AdminReservationController::class);
@@ -71,7 +75,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('roles', RoleController::class);
 
         // Vehicle Management (Create, Edit, Delete vehicles)
-        // Here we also use {vehicle} for consistency in Model Binding
         Route::post('/vehicles', [VehicleController::class, 'store']);
         Route::put('/vehicles/{vehicle}', [VehicleController::class, 'update']);
         Route::delete('/vehicles/{vehicle}', [VehicleController::class, 'destroy']);
