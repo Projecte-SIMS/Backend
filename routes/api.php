@@ -21,10 +21,10 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Las demás operaciones sobre users requieren autenticación
     Route::apiResource('users', UserController::class)->except(['store']);
-    Route::apiResource('roles', RoleController::class);
+    Route::apiResource('roles', RoleController::class)->middleware(\Spatie\Permission\Middleware\RoleMiddleware::class.':Admin');
     Route::apiResource('vehicles', VehicleController::class);
     Route::get('vehicles-map', [VehicleController::class, 'map']);
-    Route::get('vehicles-map-admin', [VehicleController::class, 'adminMap']);
+    Route::get('vehicles-map-admin', [VehicleController::class, 'adminMap'])->middleware(\Spatie\Permission\Middleware\RoleMiddleware::class.':Admin');
     Route::apiResource('tickets', TicketController::class);
     Route::post('tickets/{ticket}/messages', [TicketMessageController::class, 'store']);
     Route::delete('tickets/{ticket}/messages/{message}', [TicketMessageController::class, 'destroy']);
