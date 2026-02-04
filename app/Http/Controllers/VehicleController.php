@@ -128,7 +128,7 @@ class VehicleController extends Controller
                 'model' => $vehicle->model,
                 'latitude' => $location['latitude'] ?? null,
                 'longitude' => $location['longitude'] ?? null,
-                'status' => $vehicle->active ? 'active' : 'inactive',
+                'status' => isset($location['active']) ? ($location['active'] ? 'active' : 'inactive') : 'inactive',
             ];
         })->filter(fn($v) => $v['latitude'] !== null && $v['longitude'] !== null)->values();
 

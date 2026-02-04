@@ -23,6 +23,7 @@ class VehicleLocationService
                 $result[$licensePlate] = [
                     'latitude' => (float) ($location->latitude ?? $location->lat ?? 0),
                     'longitude' => (float) ($location->longitude ?? $location->lng ?? $location->lon ?? 0),
+                    'active' => isset($location->active) ? (bool) $location->active : null,
                 ];
             }
         }
@@ -48,6 +49,7 @@ class VehicleLocationService
         return [
             'latitude' => (float) ($location->latitude ?? $location->lat ?? 0),
             'longitude' => (float) ($location->longitude ?? $location->lng ?? $location->lon ?? 0),
+            'active' => isset($location->active) ? (bool) $location->active : null,
         ];
     }
 }
