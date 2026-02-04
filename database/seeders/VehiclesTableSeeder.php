@@ -10,7 +10,9 @@ class VehiclesTableSeeder extends Seeder
     public function run()
     {
         $vehicles = [
-            ['license_plate' => 'ABC123', 'brand' => 'Toyota', 'model' => 'Yaris', 'active' => true],
+            // Mark ABC123 as inactive (available for reservation)
+            ['license_plate' => 'ABC123', 'brand' => 'Toyota', 'model' => 'Yaris', 'active' => false],
+            // Other vehicles busy
             ['license_plate' => 'DEF456', 'brand' => 'Ford', 'model' => 'Fiesta', 'active' => true],
             ['license_plate' => 'GHI789', 'brand' => 'Nissan', 'model' => 'March', 'active' => true],
         ];

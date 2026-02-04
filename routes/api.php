@@ -24,6 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('roles', RoleController::class);
     Route::apiResource('vehicles', VehicleController::class);
     Route::get('vehicles-map', [VehicleController::class, 'map']);
+    Route::get('vehicles-map-admin', [VehicleController::class, 'adminMap']);
     Route::apiResource('tickets', TicketController::class);
     Route::post('tickets/{ticket}/messages', [TicketMessageController::class, 'store']);
     Route::delete('tickets/{ticket}/messages/{message}', [TicketMessageController::class, 'destroy']);

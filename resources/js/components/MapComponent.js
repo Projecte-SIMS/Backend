@@ -40,6 +40,10 @@ export default class MapComponent {
 
         const menu = document.createElement('div');
         menu.className = 'absolute top-4 left-4 bg-white p-2 rounded shadow';
+        // Ensure the admin menu is above Leaflet panes and accepts clicks
+        menu.style.position = 'absolute';
+        menu.style.zIndex = '10000';
+        menu.style.pointerEvents = 'auto';
         menu.innerHTML = `
             <button id="refreshVehicles" class="px-3 py-1 border rounded">Refresh</button>
             <button id="centerMap" class="px-3 py-1 border rounded ml-2">Center</button>
