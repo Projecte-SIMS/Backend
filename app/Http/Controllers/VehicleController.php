@@ -5,11 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Vehicle;
 use App\Http\Requests\Vehicle\StoreVehicleRequest;
 use App\Http\Requests\Vehicle\UpdateVehicleRequest;
+use App\Services\VehicleLocationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class VehicleController extends Controller
 {
+    public function __construct(
+        private VehicleLocationService $locationService
+    ) {}
+
     /**
      * Lista paginada de vehículos con filtros
      * 
@@ -103,5 +108,30 @@ class VehicleController extends Controller
         return response()->json([
             'message' => 'Vehículo eliminado correctamente',
         ]);
+    }
+
+    /**
+     * Obtener vehículos con ubicaciones para el mapa
+     */
+    public function map(): JsonResponse
+    {
+        $vehicles = Vehicle::all();
+        $locations = $this->locationService->getLocations();
+
+        $result = $vehicles->map(function ($vehicle) use ($locations) {
+            $location = $locations[$vehicle->license_plate] ?? null;
+            
+            return [
+                'id' => $vehicle->id,
+                'plate' => $vehicle->license_plate,
+                'brand' => $vehicle->brand,
+                'model' => $vehicle->model,
+                'latitude' => $location['latitude'] ?? null,
+                'longitude' => $location['longitude'] ?? null,
+                'status' => $vehicle->active ? 'active' : 'inactive',
+            ];
+        })->filter(fn($v) => $v['latitude'] !== null && $v['longitude'] !== null)->values();
+
+        return response()->json($result);
     }
 }

@@ -1,0 +1,61 @@
+{
+  "info": {
+    "name": "SIMS Backend",
+    "_postman_id": "d1f8b3d8-0000-4c3d-9000-xxxxxxxxxxxx",
+    "description": "Colección para probar endpoints de vehículos y mapa. Generado: 2026-02-03T18:21:39.841Z",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Vehicle",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{auth_token}}", "type": "text"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"license_plate\":\"ABC123\",\"brand\":\"Toyota\",\"model\":\"Yaris\",\"active\":true}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/vehicles",
+          "host": ["{{base_url}}"],
+          "path": ["api","vehicles"]
+        }
+      }
+    },
+    {
+      "name": "Get Vehicles Map",
+      "request": {
+        "method": "GET",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{auth_token}}", "type": "text"}
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/vehicles-map",
+          "host": ["{{base_url}}"],
+          "path": ["api","vehicles-map"]
+        }
+      }
+    },
+    {
+      "name": "Get Vehicles",
+      "request": {
+        "method": "GET",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{auth_token}}", "type": "text"}
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/vehicles",
+          "host": ["{{base_url}}"],
+          "path": ["api","vehicles"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {"key": "base_url", "value": "http://localhost:8000"},
+    {"key": "auth_token", "value": ""}
+  ]
+}
