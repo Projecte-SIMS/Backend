@@ -16,6 +16,8 @@ class User extends Authenticatable
     use HasFactory, Notifiable, HasApiTokens;
     use HasRoles;
 
+    public $guard_name = 'web';
+
     /**
      * Assign a default role when a user is created if they have no role.
      */
@@ -82,5 +84,9 @@ class User extends Authenticatable
     public function trips()
     {
         return $this->hasManyThrough(Trip::class, Reservation::class);
+    }
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class);
     }
 }

@@ -44,6 +44,7 @@ class PermissionsSeeder extends Seeder
             
             'can.view.all.tickets',
             'can.reply.any.ticket',
+            'can.delete.any.ticket',
             
             // --- BLOQUE MANTENIMIENTO (Extraído de tu lógica anterior) ---
             'can.view.maintenance',

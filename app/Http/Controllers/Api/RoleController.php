@@ -9,9 +9,6 @@ use Illuminate\Validation\Rule;
 
 class RoleController extends Controller
 {
-    /**
-     * Display a listing of roles.
-     */
     public function index()
     {
         $roles = Role::with('permissions')->get();
@@ -19,9 +16,6 @@ class RoleController extends Controller
         return response()->json($roles);
     }
 
-    /**
-     * Store a newly created role.
-     */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -43,17 +37,11 @@ class RoleController extends Controller
         return response()->json($role->load('permissions'), 201);
     }
 
-    /**
-     * Display the specified role.
-     */
     public function show(Role $role)
     {
         return response()->json($role->load('permissions'));
     }
 
-    /**
-     * Update the specified role.
-     */
     public function update(Request $request, Role $role)
     {
         $data = $request->validate([
@@ -80,9 +68,6 @@ class RoleController extends Controller
         return response()->json($role->load('permissions'));
     }
 
-    /**
-     * Remove the specified role.
-     */
     public function destroy(Role $role)
     {
         $role->delete();

@@ -2,40 +2,58 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Ticket;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 
 class TicketController extends Controller
 {
     public function index()
     {
-        return Ticket::with('messages')->orderBy('created_at', 'desc')->get();
+        $user = Auth::user();
+
+        if ($user->can('can.view.all.tickets')) {
+            return Ticket::with(['user', 'messages'])->orderBy('created_at', 'desc')->get();
+        }
+
+        if ($user->can('can.view.own.tickets')) {
+            return Ticket::where('user_id', $user->id)
+                ->with('messages')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+
+        return response()->json(['message' => 'Unauthorized'], 403);
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create', Ticket::class);
+
         $data = $request->validate([
-            'user_id' => ['required', 'exists:users,id'],
             'vehicle_id' => ['nullable', 'exists:vehicles,id'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['sometimes', 'string'],
-            'active' => ['sometimes', 'boolean'],
         ]);
 
-        $ticket = Ticket::create($data);
+        $ticket = $request->user()->tickets()->create($data);
+
         return response($ticket, Response::HTTP_CREATED);
     }
 
     public function show(Ticket $ticket)
     {
-        return $ticket->load('messages');
+        $this->authorize('view', $ticket);
+
+        return $ticket->load(['messages.user', 'user']);
     }
 
     public function update(Request $request, Ticket $ticket)
     {
+        $this->authorize('update', $ticket);
+
         $data = $request->validate([
-            'user_id' => ['sometimes', 'exists:users,id'],
             'vehicle_id' => ['sometimes', 'nullable', 'exists:vehicles,id'],
             'title' => ['sometimes', 'string', 'max:255'],
             'description' => ['sometimes', 'string'],
@@ -48,6 +66,10 @@ class TicketController extends Controller
 
     public function destroy(Ticket $ticket)
     {
+        if (!Auth::user()->can('can.delete.any.ticket')) { 
+             return response()->json(['message' => 'Only admins can delete'], 403);
+        }
+
         $ticket->delete();
         return response(null, Response::HTTP_NO_CONTENT);
     }
