@@ -16,9 +16,24 @@ class Vehicle extends Model
         'brand',
         'model',
         'active',
+        'price_per_minute',
+        'image_url',
     ];
 
     protected $casts = [
         'active' => 'boolean',
+        'price_per_minute' => 'float',
     ];
+
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(Reservation::class);
+    }
+
+    public function isAvailable(): bool
+    {
+        return $this->active && $this->reservations()
+            ->whereIn('status', ['pending', 'active'])
+            ->doesntExist();
+    }
 }

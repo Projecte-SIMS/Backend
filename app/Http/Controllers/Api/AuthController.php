@@ -10,9 +10,6 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    /**
-     * Login user and create token
-     */
     public function login(Request $request)
     {
         $request->validate([
@@ -24,43 +21,34 @@ class AuthController extends Controller
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['Las credenciales son incorrectas.'],
+                'email' => ['Incorrect credentials.'],
             ]);
         }
 
-        // Verificar si el usuario está activo
         if (!$user->active) {
             return response()->json([
-                'message' => 'Usuario inactivo.'
+                'message' => 'User inactive.'
             ], 403);
         }
 
-        // Crear token
         $token = $user->createToken('api-token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Login exitoso',
+            'message' => 'Login successful',
             'token' => $token,
             'user' => $user,
         ]);
     }
 
-    /**
-     * Logout user (revoke token)
-     */
     public function logout(Request $request)
     {
-        // Revocar el token actual
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
-            'message' => 'Logout exitoso'
+            'message' => 'Logout successful'
         ]);
     }
 
-    /**
-     * Get authenticated user
-     */
     public function user(Request $request)
     {
         return response()->json([

@@ -17,8 +17,18 @@ class Ticket extends Model
         'active',
     ];
 
+    protected $casts = [
+        'active' => 'boolean',
+    ];
+
     public function messages()
     {
         return $this->hasMany(TicketMessage::class);
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
 }

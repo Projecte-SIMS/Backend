@@ -4,19 +4,34 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('trips', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->unsignedBigInteger('vehicle_id');
-            $table->unsignedBigInteger('driver_id');
-            $table->timestampTz('start_ts')->nullable();
-            $table->timestampTz('end_ts')->nullable();
-            $table->timestamps();
+            $table->id();
+            
+            // Relación con la reserva
+            $table->foreignId('reservation_id')->constrained()->onDelete('cascade')->unique();
 
-            $table->foreign('vehicle_id')->references('id')->on('vehicles')->onDelete('cascade');
-            $table->foreign('driver_id')->references('id')->on('users')->onDelete('cascade');
+            // Tiempos
+            $table->timestamp('engine_started_at');
+            $table->timestamp('engine_stopped_at')->nullable();
+
+            // Dinero
+            $table->decimal('total_amount', 10, 2)->nullable();
+            $table->decimal('penalty_amount', 10, 2)->default(0);
+
+            // Datos del viaje
+            $table->integer('minutes_driven')->nullable();
+            $table->string('start_location')->nullable();
+            $table->string('end_location')->nullable();
+            
+            // 🔥 FALTABA ESTA LÍNEA (Visible en tu foto 2)
+            $table->text('notes')->nullable(); 
+
+            $table->timestamps();   // created_at, updated_at
+            $table->softDeletes();  // deleted_at (Visible en tu foto 2)
         });
     }
 

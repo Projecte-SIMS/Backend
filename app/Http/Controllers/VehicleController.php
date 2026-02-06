@@ -3,52 +3,45 @@
 namespace App\Http\Controllers;
 
 use App\Models\Vehicle;
-use App\Http\Requests\Vehicle\StoreVehicleRequest;
-use App\Http\Requests\Vehicle\UpdateVehicleRequest;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class VehicleController extends Controller
 {
-    /**
-     * Lista paginada de vehículos con filtros
-     * 
-     * Filtros disponibles:
-     * - search: busca por license_plate, brand o model
-     * - license_plate: filtro exacto por matrícula
-     * - brand: filtro por marca
-     * - model: filtro por modelo
-     * - active: filtro por estado activo (true/false)
-     */
+
     public function index(Request $request): JsonResponse
     {
+        $user = Auth::user();
         $query = Vehicle::query();
 
-        // Búsqueda general por license_plate, brand o model
+        if (!$user->can('can.view.all.vehicles')) {
+            $query->where('active', true);
+        } else {
+            if ($request->has('active')) {
+                $query->where('active', filter_var($request->input('active'), FILTER_VALIDATE_BOOLEAN));
+            }
+        }
+
+
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
-                $q->where('license_plate', 'ILIKE', "%{$search}%")
-                  ->orWhere('brand', 'ILIKE', "%{$search}%")
-                  ->orWhere('model', 'ILIKE', "%{$search}%");
+                $q->where('license_plate', 'LIKE', "%{$search}%")
+                  ->orWhere('brand', 'LIKE', "%{$search}%")
+                  ->orWhere('model', 'LIKE', "%{$search}%");
             });
         }
 
-        // Filtros específicos
+
         if ($request->filled('license_plate')) {
-            $query->where('license_plate', 'ILIKE', "%{$request->input('license_plate')}%");
+            $query->where('license_plate', 'LIKE', "%{$request->input('license_plate')}%");
         }
-
         if ($request->filled('brand')) {
-            $query->where('brand', 'ILIKE', "%{$request->input('brand')}%");
+            $query->where('brand', 'LIKE', "%{$request->input('brand')}%");
         }
-
         if ($request->filled('model')) {
-            $query->where('model', 'ILIKE', "%{$request->input('model')}%");
-        }
-
-        if ($request->has('active')) {
-            $query->where('active', filter_var($request->input('active'), FILTER_VALIDATE_BOOLEAN));
+            $query->where('model', 'LIKE', "%{$request->input('model')}%");
         }
 
         $vehicles = $query->orderBy('created_at', 'desc')
@@ -57,51 +50,75 @@ class VehicleController extends Controller
         return response()->json($vehicles);
     }
 
-    /**
-     * Crear un nuevo vehículo
-     */
-    public function store(StoreVehicleRequest $request): JsonResponse
+
+    public function store(Request $request): JsonResponse
     {
-        $vehicle = Vehicle::create($request->validated());
+        $this->authorize('create', Vehicle::class);
+
+        $data = $request->validate([
+            'license_plate' => 'required|string|unique:vehicles,license_plate',
+            'brand' => 'required|string',
+            'model' => 'required|string',
+            'active' => 'boolean',
+            'image_url' => 'nullable|url'
+        ]);
+
+        $vehicle = Vehicle::create($data);
 
         return response()->json([
-            'message' => 'Vehículo creado correctamente',
+            'message' => 'Vehicle created successfully',
             'data' => $vehicle,
         ], 201);
     }
 
-    /**
-     * Mostrar un vehículo específico
-     */
+
     public function show(Vehicle $vehicle): JsonResponse
     {
-        return response()->json([
-            'data' => $vehicle,
-        ]);
+        $user = Auth::user();
+
+        if (!$vehicle->active && !$user->can('can.view.all.vehicles')) {
+            return response()->json(['message' => 'Vehicle not found or unavailable'], 404);
+        }
+
+        return response()->json(['data' => $vehicle]);
     }
 
-    /**
-     * Actualizar un vehículo
-     */
-    public function update(UpdateVehicleRequest $request, Vehicle $vehicle): JsonResponse
+
+    public function update(Request $request, Vehicle $vehicle): JsonResponse
     {
-        $vehicle->update($request->validated());
+        $this->authorize('update', $vehicle);
+
+
+        $data = $request->validate([
+            'license_plate' => 'sometimes|string|unique:vehicles,license_plate,' . $vehicle->id,
+            'brand' => 'sometimes|string',
+            'model' => 'sometimes|string',
+            'active' => 'sometimes|boolean',
+            'image_url' => 'nullable|url'
+        ]);
+
+        $vehicle->update($data);
 
         return response()->json([
-            'message' => 'Vehículo actualizado correctamente',
+            'message' => 'Vehicle updated successfully',
             'data' => $vehicle,
         ]);
     }
 
-    /**
-     * Eliminar un vehículo (soft delete)
-     */
+
     public function destroy(Vehicle $vehicle): JsonResponse
     {
+        $this->authorize('delete', $vehicle);
+
+
+        if ($vehicle->reservations()->whereIn('status', ['pending', 'active'])->exists()) {
+             return response()->json([
+                 'message' => 'Cannot delete vehicle with active reservations.'
+             ], 409);
+        }
+
         $vehicle->delete();
 
-        return response()->json([
-            'message' => 'Vehículo eliminado correctamente',
-        ]);
+        return response()->json(['message' => 'Vehicle deleted successfully']);
     }
 }
