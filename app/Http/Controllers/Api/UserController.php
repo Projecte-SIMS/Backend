@@ -34,15 +34,12 @@ class UserController extends Controller
             'role_id' => ['nullable', 'integer', 'exists:roles,id'],
         ]);
 
-        // Extract role_id before creating user (not a fillable attribute on User model)
         $roleId = $data['role_id'] ?? null;
         unset($data['role_id']);
 
-        // Check authorization: only Admin users can create users with non-Client roles
         if ($roleId) {
             $role = Role::find($roleId);
             
-            // If trying to assign a role other than Client, require Admin authentication
             if ($role && $role->name !== 'Client') {
                 $user = auth('sanctum')->user();
                 
@@ -59,7 +56,6 @@ class UserController extends Controller
         $data['password'] = Hash::make($data['password']);
         $user = User::create($data);
         
-        // Assign role if provided
         if ($roleId) {
             $role = Role::find($roleId);
             if ($role) {
@@ -92,17 +88,14 @@ class UserController extends Controller
             unset($data['password']);
         }
         
-        // Extract role_id before updating user (not a fillable attribute on User model)
         $roleId = $data['role_id'] ?? null;
         unset($data['role_id']);
 
         $user->update($data);
         
-        // Update role if provided
         if ($roleId !== null) {
             $role = Role::find($roleId);
             if ($role) {
-                // Remove all existing roles and assign the new one
                 $user->syncRoles([$role]);
             }
         }

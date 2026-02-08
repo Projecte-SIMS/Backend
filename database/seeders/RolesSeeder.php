@@ -8,35 +8,38 @@ use Spatie\Permission\Models\Permission;
 
 class RolesSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Create roles
+        // 1. Crear Roles
         $adminRole = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
         $clientRole = Role::firstOrCreate(['name' => 'Client', 'guard_name' => 'web']);
         $maintenanceRole = Role::firstOrCreate(['name' => 'Maintenance', 'guard_name' => 'web']);
 
-        // Assign permissions to Admin
-        $adminRole->givePermissionTo(Permission::all());
+        // 2. Asignar Permisos al ADMIN (Todo)
+        $adminRole->syncPermissions(Permission::all());
 
-        // Assign permissions to Client
-        $clientRole->givePermissionTo([
-            'users.view',
-            'vehicles.view',
-            'trips.view',
-            'trips.manage',
+        // 3. Asignar Permisos al CLIENTE (Según tu Excel)
+        $clientRole->syncPermissions([
+            'can.view.vehicles',
+            'can.view.vehicle.detail',
+            'can.create.reservation',
+            'can.activate.reservation',
+            'can.finish.reservation',
+            'can.cancel.reservation',
+            'can.create.ticket',
+            'can.view.own.tickets',
+            'can.reply.own.tickets',
+            'can.view.profile',
         ]);
 
-        // Assign permissions to Maintenance
-        $maintenanceRole->givePermissionTo([
-            'users.view',
-            'vehicles.view',
-            'vehicles.manage',
-            'maintenance.view',
-            'maintenance.manage',
-            'maintenance.delete',
+        // 4. Asignar Permisos a MANTENIMIENTO (Opcional, basado en lo que tenías)
+        // Le damos permisos de ver vehículos y gestionar su propia tabla
+        $maintenanceRole->syncPermissions([
+            'can.view.all.vehicles', // Necesita ver todos para repararlos
+            'can.edit.vehicle',      // Para cambiar estado a "en reparación"
+            'can.view.maintenance',
+            'can.manage.maintenance',
+            'can.delete.maintenance',
         ]);
     }
 }
