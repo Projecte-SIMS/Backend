@@ -138,10 +138,59 @@ return new class extends Migration
 
         throw_if(empty($tableNames), Exception::class, 'Error: config/permission.php not found and defaults could not be merged. Please publish the package configuration before proceeding, or drop the tables manually.');
 
-        Schema::drop($tableNames['role_has_permissions']);
-        Schema::drop($tableNames['model_has_roles']);
-        Schema::drop($tableNames['model_has_permissions']);
-        Schema::drop($tableNames['roles']);
-        Schema::drop($tableNames['permissions']);
+        // Drop foreign keys from users table first if they exist
+        if (Schema::hasColumn('users', 'role_id')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropForeign(['role_id']);
+                $table->dropColumn('role_id');
+            });
+        }
+
+        // Drop role_permissions table foreign keys first
+        Schema::dropIfExists('role_permissions');
+
+        Schema::dropIfExists($tableNames['role_has_permissions']);
+        Schema::dropIfExists($tableNames['model_has_roles']);
+        Schema::dropIfExists($tableNames['model_has_permissions']);
+        Schema::dropIfExists($tableNames['roles']);
+        Schema::dropIfExists($tableNames['permissions']);
+
+        // Recreate old tables structure for rollback compatibility
+        if (!Schema::hasTable('roles')) {
+            Schema::create('roles', function (Blueprint $table) {
+                $table->bigIncrements('id');
+                $table->string('name');
+                $table->timestamps();
+            });
+        }
+
+        if (!Schema::hasTable('permissions')) {
+            Schema::create('permissions', function (Blueprint $table) {
+                $table->bigIncrements('id');
+                $table->string('code')->unique();
+                $table->string('description')->nullable();
+                $table->timestamps();
+            });
+        }
+
+        if (!Schema::hasTable('role_permissions')) {
+            Schema::create('role_permissions', function (Blueprint $table) {
+                $table->bigIncrements('id');
+                $table->unsignedBigInteger('role_id');
+                $table->unsignedBigInteger('permission_id');
+                $table->timestamps();
+                $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade');
+                $table->foreign('permission_id')->references('id')->on('permissions')->onDelete('cascade');
+                $table->unique(['role_id', 'permission_id']);
+            });
+        }
+
+        // Re-add role_id to users table
+        if (!Schema::hasColumn('users', 'role_id')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->unsignedBigInteger('role_id')->nullable()->after('id');
+                $table->foreign('role_id')->references('id')->on('roles')->onDelete('set null');
+            });
+        }
     }
 };
