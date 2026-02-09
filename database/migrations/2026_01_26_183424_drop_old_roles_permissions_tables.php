@@ -29,29 +29,35 @@ return new class extends Migration
     public function down(): void
     {
         // Recreate roles table
-        Schema::create('roles', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->string('name');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('roles')) {
+            Schema::create('roles', function (Blueprint $table) {
+                $table->bigIncrements('id');
+                $table->string('name');
+                $table->timestamps();
+            });
+        }
 
         // Recreate permissions table
-        Schema::create('permissions', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->string('code')->unique();
-            $table->string('description')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('permissions')) {
+            Schema::create('permissions', function (Blueprint $table) {
+                $table->bigIncrements('id');
+                $table->string('code')->unique();
+                $table->string('description')->nullable();
+                $table->timestamps();
+            });
+        }
 
         // Recreate role_permissions table
-        Schema::create('role_permissions', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->unsignedBigInteger('role_id');
-            $table->unsignedBigInteger('permission_id');
-            $table->timestamps();
-            $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade');
-            $table->foreign('permission_id')->references('id')->on('permissions')->onDelete('cascade');
-            $table->unique(['role_id','permission_id']);
-        });
+        if (!Schema::hasTable('role_permissions')) {
+            Schema::create('role_permissions', function (Blueprint $table) {
+                $table->bigIncrements('id');
+                $table->unsignedBigInteger('role_id');
+                $table->unsignedBigInteger('permission_id');
+                $table->timestamps();
+                $table->foreign('role_id')->references('id')->on('roles')->onDelete('cascade');
+                $table->foreign('permission_id')->references('id')->on('permissions')->onDelete('cascade');
+                $table->unique(['role_id','permission_id']);
+            });
+        }
     }
 };
