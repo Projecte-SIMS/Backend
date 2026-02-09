@@ -15,12 +15,12 @@ class UserController extends Controller
 {
     public function index()
     {
-        return response()->json(User::all());
+        return response()->json(User::with('roles')->get());
     }
 
     public function show(User $user)
     {
-        return response()->json($user);
+        return response()->json($user->load('roles'));
     }
 
     public function store(Request $request)
