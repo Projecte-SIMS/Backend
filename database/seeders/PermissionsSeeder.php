@@ -8,53 +8,48 @@ use Spatie\Permission\PermissionRegistrar;
 
 class PermissionsSeeder extends Seeder
 {
+    /**
+     * Seed the permissions table with a simplified structure.
+     * Format: `module.action` where action is: view, manage (create/edit), delete
+     */
     public function run(): void
     {
-        // 1. Limpiar la caché de permisos de Spatie
+        // Clear all cached roles and permissions
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // 2. Lista exacta basada en tu Excel (Columna Acción)
+        // Define simplified permissions: 3 levels per module
         $permissions = [
-            // --- BLOQUE CLIENTE (Común) ---
-            'can.view.vehicles',            // Ver lista
-            'can.view.vehicle.detail',      // Ver detalle
-            'can.create.reservation',       // Reservar
-            'can.activate.reservation',     // Recoger
-            'can.finish.reservation',       // Devolver
-            'can.cancel.reservation',       // Cancelar
-            'can.create.ticket',            // Crear ticket
-            'can.view.own.tickets',         // Ver mis tickets
-            'can.reply.own.tickets',        // Responder mis tickets
-            'can.view.profile',             // Ver mi perfil
+            // Users Module
+            'users.view',
+            'users.manage',    // Create, Edit
+            'users.delete',
 
-            // --- BLOQUE ADMIN (Gestión) ---
-            'can.create.vehicle',
-            'can.edit.vehicle',
-            'can.delete.vehicle',
-            'can.view.all.vehicles',        // Ver inventario completo (inc. rotos)
-            
-            'can.view.users',
-            'can.manage.users',
-            'can.delete.users',
-            
-            'can.view.all.reservations',
-            'can.force.finish.reservation',
-            
-            'can.manage.roles',             // Crear roles y asignar
-            
-            'can.view.all.tickets',
-            'can.reply.any.ticket',
-            'can.delete.any.ticket',
-            
-            // --- BLOQUE MANTENIMIENTO (Extraído de tu lógica anterior) ---
-            'can.view.maintenance',
-            'can.manage.maintenance',
-            'can.delete.maintenance',
+            // Roles Module
+            'roles.view',
+            'roles.manage',     // Create, Edit
+            'roles.delete',
+
+            // Vehicles Module
+            'vehicles.view',
+            'vehicles.manage',  // Create, Edit, Maintain
+            'vehicles.delete',
+
+            // Tickets Module
+            'tickets.view',
+            'tickets.manage',   // Create, Respond
+            'tickets.delete',
+
+            // Reservations Module
+            'reservations.view',
+            'reservations.manage', // Create, Activate, Cancel, Finish
+            'reservations.delete',
         ];
 
-        // 3. Crear los permisos
+        // Create or retrieve permissions
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+            Permission::firstOrCreate(
+                ['name' => $permission, 'guard_name' => 'web']
+            );
         }
     }
 }

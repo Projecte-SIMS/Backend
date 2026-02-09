@@ -8,38 +8,34 @@ use Spatie\Permission\Models\Permission;
 
 class RolesSeeder extends Seeder
 {
+    /**
+     * Seed the roles and assign permissions according to business rules.
+     */
     public function run(): void
     {
-        // 1. Crear Roles
+        // Create core roles
         $adminRole = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
         $clientRole = Role::firstOrCreate(['name' => 'Client', 'guard_name' => 'web']);
         $maintenanceRole = Role::firstOrCreate(['name' => 'Maintenance', 'guard_name' => 'web']);
 
-        // 2. Asignar Permisos al ADMIN (Todo)
+        // Admin: Full access to all permissions
         $adminRole->syncPermissions(Permission::all());
 
-        // 3. Asignar Permisos al CLIENTE (Según tu Excel)
+        // Client: Limited permissions
+        // Can view vehicles and manage own tickets/reservations
         $clientRole->syncPermissions([
-            'can.view.vehicles',
-            'can.view.vehicle.detail',
-            'can.create.reservation',
-            'can.activate.reservation',
-            'can.finish.reservation',
-            'can.cancel.reservation',
-            'can.create.ticket',
-            'can.view.own.tickets',
-            'can.reply.own.tickets',
-            'can.view.profile',
+            'vehicles.view',
+            'tickets.view',
+            'tickets.manage',
+            'reservations.view',
+            'reservations.manage',
         ]);
 
-        // 4. Asignar Permisos a MANTENIMIENTO (Opcional, basado en lo que tenías)
-        // Le damos permisos de ver vehículos y gestionar su propia tabla
+        // Maintenance: Vehicle management
+        // Can view and manage vehicles (maintenance, repairs, etc.)
         $maintenanceRole->syncPermissions([
-            'can.view.all.vehicles', // Necesita ver todos para repararlos
-            'can.edit.vehicle',      // Para cambiar estado a "en reparación"
-            'can.view.maintenance',
-            'can.manage.maintenance',
-            'can.delete.maintenance',
+            'vehicles.view',
+            'vehicles.manage',
         ]);
     }
 }

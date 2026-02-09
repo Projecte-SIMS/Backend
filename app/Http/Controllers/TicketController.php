@@ -13,11 +13,13 @@ class TicketController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->can('can.view.all.tickets')) {
+        // Admin o Soporte ve todos
+        if ($user->hasPermissionTo('tickets.manage')) {
             return Ticket::with(['user', 'messages'])->orderBy('created_at', 'desc')->get();
         }
 
-        if ($user->can('can.view.own.tickets')) {
+        // Usuario normal ve los suyos
+        if ($user->hasPermissionTo('tickets.view')) {
             return Ticket::where('user_id', $user->id)
                 ->with('messages')
                 ->orderBy('created_at', 'desc')
@@ -66,9 +68,7 @@ class TicketController extends Controller
 
     public function destroy(Ticket $ticket)
     {
-        if (!Auth::user()->can('can.delete.any.ticket')) { 
-             return response()->json(['message' => 'Only admins can delete'], 403);
-        }
+        $this->authorize('delete', $ticket);
 
         $ticket->delete();
         return response(null, Response::HTTP_NO_CONTENT);
