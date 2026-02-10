@@ -48,6 +48,12 @@ docker-compose.override.yml
 .phpactor.json
 .phpunit.result.cache
 /.fleet
+
+# Test and audit scripts
+/audit_*.php
+/test_*.php
+/test_*.ps1
+/check_*.php
 /.idea
 /.nova
 /.phpunit.cache

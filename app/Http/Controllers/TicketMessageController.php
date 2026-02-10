@@ -37,10 +37,10 @@ class TicketMessageController extends Controller
 
     public function destroy(TicketMessage $message)
     {
-
         $user = Auth::user();
 
-        if ($user->id !== $message->user_id && !$user->can('can.delete.any.message')) {
+        // Only the owner or an admin with delete permission can delete
+        if ($user->id !== $message->user_id && !$user->hasPermissionTo('tickets.delete')) {
             return response()->json(['message' => 'No autorizado'], 403);
         }
 

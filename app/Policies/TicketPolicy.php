@@ -4,43 +4,62 @@ namespace App\Policies;
 
 use App\Models\Ticket;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class TicketPolicy
 {
-   /**
-     * ¿Quién puede crear un ticket?
+    /**
+     * Determine if the user can view any tickets.
+     * Only users with 'tickets.view' permission can list (filtered by controller).
      */
-    public function create(User $user)
+    public function viewAny(User $user): bool
     {
-        // Cualquiera con el permiso 'can.create.ticket' (Cliente o Admin)
-        return $user->can('can.create.ticket');
+        return $user->hasPermissionTo('tickets.view');
     }
 
     /**
-     * ¿Quién puede ver UN ticket concreto?
+     * Determine if the user can view a specific ticket.
+     * Admins can view any ticket, users can only view their own.
      */
-    public function view(User $user, Ticket $ticket)
+    public function view(User $user, Ticket $ticket): bool
     {
-        // 1. EL ADMIN (Jefe Supremo): Puede ver todo
-        if ($user->can('can.view.all.tickets')) {
+        // Admin can view any ticket
+        if ($user->hasPermissionTo('tickets.delete')) {
             return true;
         }
 
-        // 2. EL DUEÑO (Cliente): Solo si tiene permiso Y es su ticket
-        return $user->can('can.view.own.tickets') && $user->id === $ticket->user_id;
+        // Users can only view their own tickets
+        return $user->hasPermissionTo('tickets.view') && $user->id === $ticket->user_id;
     }
 
     /**
-     * ¿Quién puede responder/actualizar?
-     * (Usaremos esta lógica si quisieras editar el ticket, o para validar mensajes)
+     * Determine if the user can create a ticket.
      */
-    public function update(User $user, Ticket $ticket)
+    public function create(User $user): bool
     {
-        if ($user->can('can.reply.any.ticket')) {
+        return $user->hasPermissionTo('tickets.manage');
+    }
+
+    /**
+     * Determine if the user can update (respond to) a ticket.
+     * Admins can update any ticket, users can only update their own.
+     */
+    public function update(User $user, Ticket $ticket): bool
+    {
+        // Admin can update any ticket
+        if ($user->hasPermissionTo('tickets.delete')) {
             return true;
         }
 
-        return $user->can('can.reply.own.tickets') && $user->id === $ticket->user_id;
+        // Users can update their own tickets if they have manage permission
+        return $user->hasPermissionTo('tickets.manage') && $user->id === $ticket->user_id;
+    }
+
+    /**
+     * Determine if the user can delete a ticket.
+     * Only admins with 'tickets.delete' permission can delete.
+     */
+    public function delete(User $user, Ticket $ticket): bool
+    {
+        return $user->hasPermissionTo('tickets.delete');
     }
 }
