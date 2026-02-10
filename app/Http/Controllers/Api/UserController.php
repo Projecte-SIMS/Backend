@@ -8,23 +8,39 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
-use Illuminate\Auth\AuthenticationException;
-use Illuminate\Auth\Access\AuthorizationException;
 
 class UserController extends Controller
 {
+    /**
+     * List all users.
+     * Requires 'users.view' permission.
+     */
     public function index()
     {
-        return response()->json(User::with('roles')->get());
+        $this->authorize('viewAny', User::class);
+
+        return response()->json(User::all());
     }
 
+    /**
+     * Show a specific user.
+     * Users can view their own profile, admins can view any profile.
+     */
     public function show(User $user)
     {
-        return response()->json($user->load('roles'));
+        $this->authorize('view', $user);
+
+        return response()->json($user);
     }
 
+    /**
+     * Create a new user.
+     * Requires 'users.manage' permission.
+     */
     public function store(Request $request)
     {
+        $this->authorize('create', User::class);
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255'],
@@ -36,22 +52,6 @@ class UserController extends Controller
 
         $roleId = $data['role_id'] ?? null;
         unset($data['role_id']);
-
-        if ($roleId) {
-            $role = Role::find($roleId);
-            
-            if ($role && $role->name !== 'Client') {
-                $user = auth('sanctum')->user();
-                
-                if (!$user) {
-                    throw new AuthenticationException('You must be authenticated to create users with this role.');
-                }
-                
-                if (!$user->hasRole('Admin')) {
-                    throw new AuthorizationException('Only Admin users can create users with this role.');
-                }
-            }
-        }
 
         $data['password'] = Hash::make($data['password']);
         $user = User::create($data);
@@ -66,8 +66,14 @@ class UserController extends Controller
         return response()->json($user, 201);
     }
 
+    /**
+     * Update a user.
+     * Users can update their own profile, admins can update any profile.
+     */
     public function update(Request $request, User $user)
     {
+        $this->authorize('update', $user);
+
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
             'username' => ['sometimes', 'string', 'max:255'],
@@ -103,10 +109,17 @@ class UserController extends Controller
         return response()->json($user);
     }
 
+    /**
+     * Delete a user.
+     * Only admins with 'users.delete' permission.
+     * Users cannot delete themselves.
+     */
     public function destroy(User $user)
     {
+        $this->authorize('delete', $user);
+
         $user->delete();
 
-        return response()->json(User::all());
+        return response()->json(['message' => 'User deleted successfully']);
     }
 }

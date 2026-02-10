@@ -4,46 +4,98 @@ namespace App\Policies;
 
 use App\Models\Reservation;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class ReservationPolicy
 {
-    public function view(User $user, Reservation $reservation)
+    /**
+     * Determine if the user can view any reservations.
+     * Admin only - used by AdminReservationController.
+     */
+    public function viewAny(User $user): bool
     {
-        if ($user->can('can.view.all.reservations')) {
+        return $user->hasPermissionTo('reservations.delete');
+    }
+
+    /**
+     * Determine if the user can view a specific reservation.
+     * Admins can view any reservation, users can only view their own.
+     */
+    public function view(User $user, Reservation $reservation): bool
+    {
+        // Admin can view any reservation
+        if ($user->hasPermissionTo('reservations.delete')) {
             return true;
         }
-        return $user->id === $reservation->user_id;
+
+        // Users can only view their own reservations
+        return $user->hasPermissionTo('reservations.view') && $user->id === $reservation->user_id;
     }
 
-    public function create(User $user)
+    /**
+     * Determine if the user can create a reservation.
+     */
+    public function create(User $user): bool
     {
-        return $user->can('can.create.reservation');
+        return $user->hasPermissionTo('reservations.manage');
     }
 
-
-    public function cancel(User $user, Reservation $reservation)
+    /**
+     * Determine if the user can update a reservation.
+     * Admins can update any reservation, users can only update their own.
+     */
+    public function update(User $user, Reservation $reservation): bool
     {
-        if ($user->can('can.view.all.reservations')) { 
+        // Admin can update any reservation
+        if ($user->hasPermissionTo('reservations.delete')) {
             return true;
         }
 
-        return $user->can('can.cancel.reservation') && $user->id === $reservation->user_id;
+        // Users can update their own reservations if they have manage permission
+        return $user->hasPermissionTo('reservations.manage') && $user->id === $reservation->user_id;
     }
 
-    public function activate(User $user, Reservation $reservation)
+    /**
+     * Determine if the user can delete a reservation.
+     * Only admins with 'reservations.delete' permission can delete.
+     */
+    public function delete(User $user, Reservation $reservation): bool
     {
-        return $user->can('can.activate.reservation') && $user->id === $reservation->user_id;
+        return $user->hasPermissionTo('reservations.delete');
     }
 
-
-    public function finish(User $user, Reservation $reservation)
+    /**
+     * Determine if the user can activate a reservation.
+     * Delegates to the update policy.
+     */
+    public function activate(User $user, Reservation $reservation): bool
     {
-        return $user->can('can.finish.reservation') && $user->id === $reservation->user_id;
+        return $this->update($user, $reservation);
     }
 
-    public function forceFinish(User $user)
+    /**
+     * Determine if the user can cancel a reservation.
+     * Delegates to the update policy.
+     */
+    public function cancel(User $user, Reservation $reservation): bool
     {
-        return $user->can('can.force.finish.reservation');
+        return $this->update($user, $reservation);
+    }
+
+    /**
+     * Determine if the user can finish (complete) a reservation.
+     * Delegates to the update policy.
+     */
+    public function finish(User $user, Reservation $reservation): bool
+    {
+        return $this->update($user, $reservation);
+    }
+
+    /**
+     * Determine if the user can force finish a reservation.
+     * Only admins with 'reservations.delete' permission.
+     */
+    public function forceFinish(User $user, Reservation $reservation): bool
+    {
+        return $user->hasPermissionTo('reservations.delete');
     }
 }

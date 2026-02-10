@@ -9,15 +9,28 @@ use Illuminate\Validation\Rule;
 
 class RoleController extends Controller
 {
+    /**
+     * List all roles with their permissions.
+     * Requires 'roles.view' permission.
+     */
     public function index()
     {
+        $this->authorize('viewAny', Role::class);
+
         $roles = Role::with('permissions')->get();
         
         return response()->json($roles);
     }
 
+    /**
+     * Create a new role.
+     * Requires 'roles.manage' permission.
+     * Cannot create system roles (Admin, Client, Maintenance).
+     */
     public function store(Request $request)
     {
+        $this->authorize('create', Role::class);
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:roles,name'],
             'description' => ['sometimes', 'string', 'max:255'],
@@ -39,11 +52,22 @@ class RoleController extends Controller
         return response()->json($role->load('permissions'), 201);
     }
 
+    /**
+     * Show a specific role with its permissions.
+     * Requires 'roles.view' permission.
+     */
     public function show(Role $role)
     {
+        $this->authorize('view', $role);
+
         return response()->json($role->load('permissions'));
     }
 
+    /**
+     * Update a role.
+     * Requires 'roles.manage' permission.
+     * Cannot update system roles (Admin, Client, Maintenance).
+     */
     public function update(Request $request, Role $role)
     {
         // Prevent editing Admin role
@@ -79,6 +103,11 @@ class RoleController extends Controller
         return response()->json($role->load('permissions'));
     }
 
+    /**
+     * Delete a role.
+     * Requires 'roles.delete' permission.
+     * Cannot delete system roles (Admin, Client, Maintenance).
+     */
     public function destroy(Role $role)
     {
         // Prevent deleting Admin role

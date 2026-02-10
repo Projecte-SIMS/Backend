@@ -48,6 +48,12 @@ docker-compose.override.yml
 .phpactor.json
 .phpunit.result.cache
 /.fleet
+
+# Test and audit scripts
+/audit_*.php
+/test_*.php
+/test_*.ps1
+/check_*.php
 /.idea
 /.nova
 /.phpunit.cache
@@ -69,3 +75,5 @@ postman_collection.json
 tmp_insert_test_user.php
 postman_collection_tickets.json
 tmp_insert_test_user_pg.sql
+librerias-mapa.txt
+car_move

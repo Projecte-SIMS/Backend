@@ -1,8 +1,10 @@
 FROM php:8.2-fpm
 
 RUN apt-get update \
-    && apt-get install -y git unzip libpq-dev libzip-dev libpng-dev libonig-dev libxml2-dev libssl-dev --no-install-recommends \
+    && apt-get install -y git unzip libpq-dev libzip-dev libpng-dev libonig-dev libxml2-dev libssl-dev build-essential pkg-config --no-install-recommends \
     && docker-php-ext-install pdo_pgsql mbstring xml bcmath zip gd \
+    && pecl install mongodb \
+    && docker-php-ext-enable mongodb \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

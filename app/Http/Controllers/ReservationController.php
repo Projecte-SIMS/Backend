@@ -14,9 +14,12 @@ class ReservationController extends Controller
 {
     public function index()
     {
+        $this->authorize('viewAny', Reservation::class);
+
         $user = Auth::user();
 
-        if ($user->can('can.view.all.reservations')) {
+        // Admin o Manager puede ver todas
+        if ($user->hasPermissionTo('reservations.manage')) {
             return Reservation::with(['user', 'vehicle', 'trip'])
                 ->orderBy('scheduled_start', 'desc')
                 ->get();
