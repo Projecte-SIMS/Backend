@@ -5,6 +5,7 @@ services:
     container_name: project_sims_app
     volumes:
       - ./:/var/www/html
+      - vendor:/var/www/html/vendor
     working_dir: /var/www/html
     env_file:
       - .env
@@ -46,3 +47,4 @@ services:
 volumes:
   postgres_data:
   pgadmin_data:
+  vendor:
