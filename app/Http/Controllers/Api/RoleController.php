@@ -33,6 +33,7 @@ class RoleController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:roles,name'],
+            'description' => ['sometimes', 'string', 'max:255'],
             'guard_name' => ['sometimes', 'string', 'max:255'],
             'permissions' => ['sometimes', 'array'],
             'permissions.*' => ['integer', 'exists:permissions,id'],
@@ -40,6 +41,7 @@ class RoleController extends Controller
 
         $role = Role::create([
             'name' => $data['name'],
+            'description' => $data['description'] ?? '',
             'guard_name' => $data['guard_name'] ?? 'web',
         ]);
 
@@ -68,7 +70,12 @@ class RoleController extends Controller
      */
     public function update(Request $request, Role $role)
     {
-        $this->authorize('update', $role);
+        // Prevent editing Admin role
+        if (strtolower($role->name) === 'admin') {
+            return response()->json([
+                'message' => 'Cannot modify the Admin role',
+            ], 403);
+        }
 
         $data = $request->validate([
             'name' => [
@@ -77,6 +84,7 @@ class RoleController extends Controller
                 'max:255',
                 Rule::unique('roles', 'name')->ignore($role->id),
             ],
+            'description' => ['sometimes', 'string', 'max:255'],
             'guard_name' => ['sometimes', 'string', 'max:255'],
             'permissions' => ['sometimes', 'array'],
             'permissions.*' => ['integer', 'exists:permissions,id'],
@@ -84,6 +92,7 @@ class RoleController extends Controller
 
         $role->update([
             'name' => $data['name'] ?? $role->name,
+            'description' => $data['description'] ?? $role->description,
             'guard_name' => $data['guard_name'] ?? $role->guard_name,
         ]);
 
@@ -101,7 +110,12 @@ class RoleController extends Controller
      */
     public function destroy(Role $role)
     {
-        $this->authorize('delete', $role);
+        // Prevent deleting Admin role
+        if (strtolower($role->name) === 'admin') {
+            return response()->json([
+                'message' => 'Cannot delete the Admin role',
+            ], 403);
+        }
 
         $role->delete();
 

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\PermissionController;
 
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\TicketController;
@@ -26,6 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Roles endpoints
     Route::apiResource('roles', RoleController::class);
+    Route::get('/permissions', [PermissionController::class, 'index']);
     
     // Vehicles endpoints
     Route::apiResource('vehicles', VehicleController::class);
