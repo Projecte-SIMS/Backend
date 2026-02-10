@@ -61,5 +61,10 @@ class DatabaseSeeder extends Seeder
             ]
         );
         $maintenance->assignRole('Maintenance');
+
+        // 5. Crear datos de prueba
+        $this->call([
+            TestDataSeeder::class,
+        ]);
     }
 }

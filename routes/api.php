@@ -14,9 +14,6 @@ use App\Http\Controllers\AdminReservationController;
 
 
 Route::post('/login', [AuthController::class, 'login'])->name('login');
-Route::post('/users', [UserController::class, 'store']);
-
-
 
 Route::middleware('auth:sanctum')->group(function () {
     
@@ -24,6 +21,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     
     // Users endpoints
+    Route::post('/users', [UserController::class, 'store']);
     Route::apiResource('users', UserController::class)->except(['store']);
     
     // Roles endpoints

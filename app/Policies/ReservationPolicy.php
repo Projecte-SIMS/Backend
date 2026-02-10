@@ -9,11 +9,11 @@ class ReservationPolicy
 {
     /**
      * Determine if the user can view any reservations.
-     * Only users with 'reservations.view' permission can list (filtered by controller).
+     * Admin only - used by AdminReservationController.
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasPermissionTo('reservations.view');
+        return $user->hasPermissionTo('reservations.delete');
     }
 
     /**
