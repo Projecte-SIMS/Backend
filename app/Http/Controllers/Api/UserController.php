@@ -19,7 +19,7 @@ class UserController extends Controller
     {
         $this->authorize('viewAny', User::class);
 
-        return response()->json(User::all());
+        return response()->json(User::with('roles')->get());
     }
 
     /**
@@ -30,7 +30,7 @@ class UserController extends Controller
     {
         $this->authorize('view', $user);
 
-        return response()->json($user);
+        return response()->json($user->load('roles'));
     }
 
     /**
