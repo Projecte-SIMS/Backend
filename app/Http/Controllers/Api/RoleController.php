@@ -13,11 +13,18 @@ class RoleController extends Controller
      * List all roles with their permissions.
      * Requires 'roles.view' permission.
      */
-    public function index()
+    public function index(Request $request)
     {
         $this->authorize('viewAny', Role::class);
 
-        $roles = Role::with('permissions')->get();
+        $query = Role::with('permissions');
+        
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->whereRaw('LOWER(name) LIKE ?', ["%".strtolower($search)."%"]);
+        }
+        
+        $roles = $query->paginate(10);
         
         return response()->json($roles);
     }
