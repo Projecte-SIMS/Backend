@@ -12,20 +12,20 @@ class MongoVehicleLocationsSeeder extends Seeder
         $locations = [
             [
                 'license_plate' => 'ABC123',
-                'latitude' => -33.4489,
-                'longitude' => -70.6693,
+                'latitude' => 40.7361,
+                'longitude' => 0.5170,
                 'active' => true,
             ],
             [
                 'license_plate' => 'DEF456',
-                'latitude' => -33.4590,
-                'longitude' => -70.6400,
+                'latitude' => 40.7370,
+                'longitude' => 0.5185,
                 'active' => false,
             ],
             [
                 'license_plate' => 'GHI789',
-                'latitude' => -33.4500,
-                'longitude' => -70.6500,
+                'latitude' => 40.7350,
+                'longitude' => 0.5150,
                 'active' => true,
             ],
         ];

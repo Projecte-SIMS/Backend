@@ -22,27 +22,21 @@ class TestDataSeeder extends Seeder
         $client = User::find(2);     // Client
         $maint = User::find(3);      // Maintenance
 
-        // Create test vehicles
-        $vehicle1 = Vehicle::create([
-            'license_plate' => 'TEST-V001',
-            'brand' => 'Toyota',
-            'model' => 'Corolla',
-            'active' => true,
-        ]);
+        // Create vehicles that match MongoVehicleLocationsSeeder (use updateOrCreate to avoid duplicates)
+        $vehicle1 = Vehicle::updateOrCreate(
+            ['license_plate' => 'ABC123'],
+            ['brand' => 'Toyota', 'model' => 'Yaris', 'active' => true]
+        );
 
-        $vehicle2 = Vehicle::create([
-            'license_plate' => 'TEST-V002',
-            'brand' => 'Honda',
-            'model' => 'Civic',
-            'active' => true,
-        ]);
+        $vehicle2 = Vehicle::updateOrCreate(
+            ['license_plate' => 'DEF456'],
+            ['brand' => 'Ford', 'model' => 'Fiesta', 'active' => false]
+        );
 
-        $vehicle3 = Vehicle::create([
-            'license_plate' => 'TEST-V003',
-            'brand' => 'BMW',
-            'model' => 'X5',
-            'active' => false,
-        ]);
+        $vehicle3 = Vehicle::updateOrCreate(
+            ['license_plate' => 'GHI789'],
+            ['brand' => 'Nissan', 'model' => 'March', 'active' => true]
+        );
 
         // Create test tickets
         Ticket::create([
