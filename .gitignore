@@ -77,3 +77,4 @@ postman_collection_tickets.json
 tmp_insert_test_user_pg.sql
 librerias-mapa.txt
 car_move
+deployer.py
