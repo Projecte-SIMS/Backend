@@ -60,8 +60,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('permissions/{id}', [PermissionController::class, 'update']);
         Route::delete('permissions/{id}', [PermissionController::class, 'destroy']);
         // Vehicles
-        Route::apiResource('vehicles', VehicleController::class);
         Route::get('vehicles/map', [VehicleController::class, 'adminMap']);
+        Route::apiResource('vehicles', VehicleController::class);
         // Tickets
         Route::get('tickets', [TicketController::class, 'index']);
         Route::post('tickets', [TicketController::class, 'store']);
