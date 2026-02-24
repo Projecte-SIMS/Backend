@@ -78,3 +78,5 @@ tmp_insert_test_user_pg.sql
 librerias-mapa.txt
 car_move
 deployer.py
+deployer_console.py
+endpoint.md

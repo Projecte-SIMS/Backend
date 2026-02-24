@@ -15,6 +15,10 @@ class PermissionController extends Controller
      */
     public function index(): JsonResponse
     {
+        $user = auth()->user();
+        if (request()->is('admin/*') && (!$user || $user->role !== 'admin')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         try {
             $permissions = Permission::all()->groupBy(function ($permission) {
                 // Extract module from permission name (e.g., "can.view.vehicles" -> "vehicles")
@@ -45,4 +49,54 @@ class PermissionController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Store a new permission
+     */
+    public function store(Request $request): JsonResponse
+    {
+        $user = auth()->user();
+        if (request()->is('admin/*') && (!$user || $user->role !== 'admin')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:permissions,name'],
+            'description' => ['sometimes', 'string', 'max:255'],
+        ]);
+        $permission = Permission::create($data);
+        return response()->json($permission, 201);
+    }
+
+    /**
+     * Update a permission
+     */
+    public function update(Request $request, $id): JsonResponse
+    {
+        $user = auth()->user();
+        if (request()->is('admin/*') && (!$user || $user->role !== 'admin')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        $permission = Permission::findOrFail($id);
+        $data = $request->validate([
+            'name' => ['sometimes', 'string', 'max:255', 'unique:permissions,name,' . $id],
+            'description' => ['sometimes', 'string', 'max:255'],
+        ]);
+        $permission->update($data);
+        return response()->json($permission);
+    }
+
+    /**
+     * Delete a permission
+     */
+    public function destroy($id): JsonResponse
+    {
+        $user = auth()->user();
+        if (request()->is('admin/*') && (!$user || $user->role !== 'admin')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        $permission = Permission::findOrFail($id);
+        $permission->delete();
+        return response()->json(['message' => 'Permission deleted successfully']);
+    }
 }
+

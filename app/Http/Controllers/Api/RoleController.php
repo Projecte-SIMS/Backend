@@ -15,6 +15,10 @@ class RoleController extends Controller
      */
     public function index(Request $request)
     {
+        $user = auth()->user();
+        if (request()->is('admin/*') && (!$user || $user->role !== 'admin')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $this->authorize('viewAny', Role::class);
 
         $query = Role::with('permissions');
@@ -36,6 +40,10 @@ class RoleController extends Controller
      */
     public function store(Request $request)
     {
+        $user = auth()->user();
+        if (request()->is('admin/*') && (!$user || $user->role !== 'admin')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $this->authorize('create', Role::class);
 
         $data = $request->validate([

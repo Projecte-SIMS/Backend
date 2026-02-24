@@ -17,6 +17,10 @@ class UserController extends Controller
      */
     public function index()
     {
+        $user = auth()->user();
+        if (request()->is('admin/*') && (!$user || $user->role !== 'admin')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $this->authorize('viewAny', User::class);
 
         return response()->json(User::with('roles')->get());
@@ -39,6 +43,10 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $user = auth()->user();
+        if (request()->is('admin/*') && (!$user || $user->role !== 'admin')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $this->authorize('create', User::class);
 
         $data = $request->validate([
@@ -72,6 +80,10 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        $authUser = auth()->user();
+        if (request()->is('admin/*') && (!$authUser || $authUser->role !== 'admin')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $this->authorize('update', $user);
 
         $data = $request->validate([
@@ -116,10 +128,54 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
+        $authUser = auth()->user();
+        if (request()->is('admin/*') && (!$authUser || $authUser->role !== 'admin')) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
         $this->authorize('delete', $user);
 
         $user->delete();
 
+        return response()->json(['message' => 'User deleted successfully']);
+    }
+
+    /**
+     * Get the authenticated user's info (Client)
+     */
+    public function me()
+    {
+        $user = auth()->user()->load('roles.permissions');
+        return response()->json(['user' => $user]);
+    }
+
+    /**
+     * Update the authenticated user's info (Client)
+     */
+    public function updateMe(Request $request)
+    {
+        $user = auth()->user();
+        $data = $request->validate([
+            'name' => ['sometimes', 'string', 'max:255'],
+            'username' => ['sometimes', 'string', 'max:255'],
+            'email' => ['sometimes', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'password' => ['nullable', 'string', 'min:6'],
+        ]);
+        if (isset($data['password']) && $data['password'] !== null) {
+            $data['password'] = Hash::make($data['password']);
+        } else {
+            unset($data['password']);
+        }
+        $user->update($data);
+        return response()->json($user);
+    }
+
+    /**
+     * Delete the authenticated user's account (Client)
+     */
+    public function destroyMe()
+    {
+        $user = auth()->user();
+        $user->delete();
         return response()->json(['message' => 'User deleted successfully']);
     }
 }

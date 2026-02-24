@@ -13,7 +13,7 @@ class ReservationPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasPermissionTo('reservations.delete');
+        return $user->hasPermissionTo('reservations.delete') || $user->hasPermissionTo('reservations.view');
     }
 
     /**
@@ -60,7 +60,7 @@ class ReservationPolicy
      */
     public function delete(User $user, Reservation $reservation): bool
     {
-        return $user->hasPermissionTo('reservations.delete');
+        return $user->hasPermissionTo('reservations.delete') || $user->hasPermissionTo('reservations.view');
     }
 
     /**
@@ -96,6 +96,6 @@ class ReservationPolicy
      */
     public function forceFinish(User $user, Reservation $reservation): bool
     {
-        return $user->hasPermissionTo('reservations.delete');
+        return $user->hasPermissionTo('reservations.delete') || $user->hasPermissionTo('reservations.view');
     }
 }

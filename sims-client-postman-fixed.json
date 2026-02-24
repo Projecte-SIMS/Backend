@@ -1,0 +1,84 @@
+{
+  "info": {
+    "name": "SIMS Backend Client Endpoints",
+    "_postman_id": "sims-backend-client-collection",
+    "description": "Col·lecció per verificar tots els endpoints de client del backend SIMS.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8000/api/login",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"client@example.com\",\"password\":\"clientpassword\"}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.environment.set('token', jsonData.token);",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "    pm.variables.set('token', jsonData.token);",
+                  "    pm.test('Token guardat correctament', function() { pm.expect(jsonData.token).to.not.be.empty; });",
+                  "} else {",
+                  "    pm.test('No s\\'ha rebut token', function() { pm.expect(false).to.be.true; });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Usuaris",
+      "item": [
+        {"name": "Veure informació de l’usuari autenticat", "request": {"method": "GET", "url": "http://localhost:8000/api/users/me", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}]}},
+        {"name": "Editar la informació del propi usuari", "request": {"method": "PUT", "url": "http://localhost:8000/api/users/me", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\"name\":\"Nom Actualitzat\"}"}}},
+        {"name": "Eliminar el seu propi compte", "request": {"method": "DELETE", "url": "http://localhost:8000/api/users/me", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}]}}
+      ]
+    },
+    {
+      "name": "Vehicles",
+      "item": [
+        {"name": "Llistar vehicles disponibles", "request": {"method": "GET", "url": "http://localhost:8000/api/vehicles", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}]}},
+        {"name": "Veure vehicle específic", "request": {"method": "GET", "url": "http://localhost:8000/api/vehicles/1", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}]}},
+        {"name": "Veure mapa de vehicles", "request": {"method": "GET", "url": "http://localhost:8000/api/vehicles/map", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}]}}
+      ]
+    },
+    {
+      "name": "Tiquets",
+      "item": [
+        {"name": "Llistar els propis tiquets", "request": {"method": "GET", "url": "http://localhost:8000/api/tickets", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}]}},
+        {"name": "Crear tiquet", "request": {"method": "POST", "url": "http://localhost:8000/api/tickets", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\"title\":\"Tiquet de prova\",\"description\":\"Descripció del tiquet\"}"}}},
+        {"name": "Veure el propi tiquet", "request": {"method": "GET", "url": "http://localhost:8000/api/tickets/1", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}]}},
+        {"name": "Afegir missatge al propi tiquet", "request": {"method": "POST", "url": "http://localhost:8000/api/tickets/1/messages", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\"message\":\"Missatge de prova\"}"}}},
+        {"name": "Eliminar el propi missatge", "request": {"method": "DELETE", "url": "http://localhost:8000/api/messages/1", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}]}}
+      ]
+    },
+    {
+      "name": "Reserves",
+      "item": [
+        {"name": "Llistar les pròpies reserves", "request": {"method": "GET", "url": "http://localhost:8000/api/reservations", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}]}},
+        {"name": "Crear reserva", "request": {"method": "POST", "url": "http://localhost:8000/api/reservations", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}, {"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": "{\"vehicle_id\":1,\"start_date\":\"2026-02-24T18:00:00Z\",\"end_date\":\"2026-02-24T20:00:00Z\"}"}}},
+        {"name": "Veure la pròpia reserva", "request": {"method": "GET", "url": "http://localhost:8000/api/reservations/1", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}]}},
+        {"name": "Activar la pròpia reserva", "request": {"method": "POST", "url": "http://localhost:8000/api/reservations/1/activate", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}]}},
+        {"name": "Finalitzar la pròpia reserva", "request": {"method": "POST", "url": "http://localhost:8000/api/reservations/1/finish", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}]}},
+        {"name": "Cancel·lar la pròpia reserva", "request": {"method": "POST", "url": "http://localhost:8000/api/reservations/1/cancel", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}]}},
+        {"name": "Forçar la finalització de la pròpia reserva", "request": {"method": "POST", "url": "http://localhost:8000/api/reservations/1/force-finish", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}]}}
+      ]
+    }
+  ]
+}
