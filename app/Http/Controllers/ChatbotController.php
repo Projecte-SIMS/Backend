@@ -20,8 +20,8 @@ class ChatbotController extends Controller
         ]);
 
         $apiKey = env('OPEN_WEBUI_API_KEY');
-        $baseUrl = env('OPEN_WEBUI_BASE_URL', 'http://localhost:3000/api');
-        $model = env('OPEN_WEBUI_MODEL', 'llama3.1');
+        $baseUrl = env('OPEN_WEBUI_BASE_URL');
+        $model = env('OPEN_WEBUI_MODEL');
 
         if (!$apiKey) {
             return response()->json([
