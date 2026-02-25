@@ -14,11 +14,18 @@ use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\AdminReservationController;
 
 
+use App\Http\Controllers\ChatbotController;
+
+
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 
 Route::middleware('auth:sanctum')->group(function () {
     
     Route::post('/logout', [AuthController::class, 'logout']);
+    
+    // Chatbot endpoint
+    Route::post('/chatbot/chat', [ChatbotController::class, 'chat']);
+
     // Users endpoints
     Route::get('/users/me', [UserController::class, 'me']);
     Route::put('/users/me', [UserController::class, 'updateMe']);

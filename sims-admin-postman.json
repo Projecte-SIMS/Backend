@@ -103,6 +103,26 @@
         {"name": "Delete Reservation", "request": {"method": "DELETE", "url": "http://localhost:8000/api/admin/reservations/1", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}]}},
         {"name": "Force Finish Reservation", "request": {"method": "POST", "url": "http://localhost:8000/api/admin/reservations/1/force-finish", "header": [{"key": "Authorization", "value": "Bearer {{token}}"}]}}
       ]
+    },
+    {
+      "name": "Chatbot",
+      "item": [
+        {
+          "name": "Chat with AI Assistant",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8000/api/chatbot/chat",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"},
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Hello, what is SIMS?\"\n    }\n  ]\n}"
+            }
+          }
+        }
+      ]
     }
   ]
 }
