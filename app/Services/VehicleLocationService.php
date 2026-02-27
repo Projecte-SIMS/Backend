@@ -18,12 +18,27 @@ class VehicleLocationService
 
         $result = [];
         foreach ($locations as $location) {
-            $licensePlate = $location->license_plate ?? $location->licensePlate ?? null;
+            // Extraemos los bloques anidados (asegurando que sean tratados como arrays o objetos)
+            $identity  = $location->identity ?? [];
+            $telemetry = $location->telemetry ?? [];
+            $status    = $location->status ?? [];
+
+            // La matrícula ahora está dentro de identity
+            $licensePlate = $identity['license_plate'] ?? null;
+
             if ($licensePlate) {
                 $result[$licensePlate] = [
-                    'latitude' => (float) ($location->latitude ?? $location->lat ?? 0),
-                    'longitude' => (float) ($location->longitude ?? $location->lng ?? $location->lon ?? 0),
-                    'active' => isset($location->active) ? (bool) $location->active : null,
+                    // Las coordenadas están dentro de telemetry
+                    'latitude'  => (float) ($telemetry['latitude'] ?? 0),
+                    'longitude' => (float) ($telemetry['longitude'] ?? 0),
+
+                    // El estado de encendido está dentro de status
+                    'active'    => isset($status['active']) ? (bool) $status['active'] : null,
+
+                    // Opcional: Puedes añadir los nuevos campos que hemos implementado
+                    'speed'     => (float) ($telemetry['speed'] ?? 0),
+                    'rpm'       => (int) ($telemetry['rpm'] ?? 0),
+                    'temp'      => (float) ($telemetry['engine_temp'] ?? 0),
                 ];
             }
         }
