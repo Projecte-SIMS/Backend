@@ -21,6 +21,10 @@ Route::post('/login', [AuthController::class, 'login'])
     ->middleware('throttle:login')
     ->name('login');
 
+Route::post('/register', [AuthController::class, 'register'])
+    ->middleware('throttle:login')
+    ->name('register');
+
 // Health check del microservicio IoT (público para monitorización)
 Route::get('/iot/health', [IoTController::class, 'health']);
 
