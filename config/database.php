@@ -31,11 +31,12 @@ return [
 
     'connections' => [
 
-        'mongodb' => [
-            'driver' => 'mongodb',
-            'dsn' => env('MONGODB_URI', 'mongodb://localhost:27017'),
-            'database' => env('MONGODB_DATABASE', 'cluster-iot'),
-        ],
+        // MongoDB connection removed - IoT data is now accessed via microservice
+        // 'mongodb' => [
+        //     'driver' => 'mongodb',
+        //     'dsn' => env('MONGODB_URI', 'mongodb://localhost:27017'),
+        //     'database' => env('MONGODB_DATABASE', 'cluster-iot'),
+        // ],
 
         'sqlite' => [
             'driver' => 'sqlite',

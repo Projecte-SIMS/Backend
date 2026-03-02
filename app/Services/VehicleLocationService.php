@@ -2,69 +2,289 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
+/**
+ * Servicio para comunicación con el microservicio IoT (FastAPI).
+ * Centraliza todas las operaciones relacionadas con telemetría y comandos de vehículos.
+ * 
+ * MODO HÍBRIDO: Si el microservicio no está disponible, devuelve array vacío
+ * y el controlador usa solo datos de PostgreSQL.
+ */
 class VehicleLocationService
 {
-    /**
-     * Obtiene las ubicaciones de los vehículos desde MongoDB Atlas
-     * Devuelve un array indexado por license_plate
-     */
-    public function getLocations(): array
+    private string $baseUrl;
+    private string $apiKey;
+    private int $timeout;
+    private bool $microserviceAvailable = true;
+
+    public function __construct()
     {
-        $locations = DB::connection('mongodb')
-            ->table('vehicle_locations')
-            ->get();
-
-        $result = [];
-        foreach ($locations as $location) {
-            // Extraemos los bloques anidados (asegurando que sean tratados como arrays o objetos)
-            $identity  = $location->identity ?? [];
-            $telemetry = $location->telemetry ?? [];
-            $status    = $location->status ?? [];
-
-            // La matrícula ahora está dentro de identity
-            $licensePlate = $identity['license_plate'] ?? null;
-
-            if ($licensePlate) {
-                $result[$licensePlate] = [
-                    // Las coordenadas están dentro de telemetry
-                    'latitude'  => (float) ($telemetry['latitude'] ?? 0),
-                    'longitude' => (float) ($telemetry['longitude'] ?? 0),
-
-                    // El estado de encendido está dentro de status
-                    'active'    => isset($status['active']) ? (bool) $status['active'] : null,
-
-                    // Opcional: Puedes añadir los nuevos campos que hemos implementado
-                    'speed'     => (float) ($telemetry['speed'] ?? 0),
-                    'rpm'       => (int) ($telemetry['rpm'] ?? 0),
-                    'temp'      => (float) ($telemetry['engine_temp'] ?? 0),
-                ];
-            }
-        }
-
-        return $result;
+        $this->baseUrl = rtrim(env('IOT_MICROSERVICE_URL', 'http://localhost:8001'), '/');
+        $this->apiKey = env('IOT_API_KEY', 'MACMECMIC');
+        $this->timeout = (int) env('IOT_TIMEOUT', 5); // Reducido a 5s para no bloquear
     }
 
     /**
-     * Obtiene la ubicación de un vehículo específico por matrícula
+     * Obtiene las ubicaciones de todos los vehículos desde el microservicio IoT.
+     * Devuelve un array indexado por license_plate.
+     * Si el microservicio no está disponible, devuelve array vacío.
+     */
+    public function getLocations(): array
+    {
+        try {
+            $response = Http::timeout($this->timeout)
+                ->get("{$this->baseUrl}/api/devices");
+
+            if (!$response->successful()) {
+                Log::warning('IoT Microservice returned error', [
+                    'status' => $response->status(),
+                ]);
+                $this->microserviceAvailable = false;
+                return [];
+            }
+
+            $this->microserviceAvailable = true;
+            $devices = $response->json();
+            
+            if (!is_array($devices)) {
+                return [];
+            }
+            
+            $result = [];
+
+            foreach ($devices as $device) {
+                $licensePlate = $device['license_plate'] ?? $device['identity']['license_plate'] ?? null;
+                $telemetry = $device['telemetry'] ?? [];
+                $status = $device['status'] ?? [];
+
+                if ($licensePlate) {
+                    $result[$licensePlate] = [
+                        'device_id' => $device['id'] ?? $device['_id'] ?? null,
+                        'latitude' => (float) ($telemetry['latitude'] ?? 0),
+                        'longitude' => (float) ($telemetry['longitude'] ?? 0),
+                        'active' => (bool) ($status['active'] ?? false),
+                        'online' => (bool) ($device['online'] ?? false),
+                        'speed' => (float) ($telemetry['speed'] ?? 0),
+                        'rpm' => (int) ($telemetry['rpm'] ?? 0),
+                        'engine_temp' => (float) ($telemetry['engine_temp'] ?? 0),
+                        'battery_voltage' => (float) ($telemetry['battery_voltage'] ?? 0),
+                    ];
+                }
+            }
+
+            return $result;
+        } catch (\Exception $e) {
+            Log::warning('IoT Microservice not available', [
+                'error' => $e->getMessage(),
+            ]);
+            $this->microserviceAvailable = false;
+            return [];
+        }
+    }
+
+    /**
+     * Verifica si el microservicio está disponible.
+     */
+    public function isMicroserviceAvailable(): bool
+    {
+        return $this->microserviceAvailable;
+    }
+
+    /**
+     * Obtiene todos los dispositivos IoT con información completa.
+     */
+    public function getAllDevices(): array
+    {
+        try {
+            $response = Http::timeout($this->timeout)
+                ->get("{$this->baseUrl}/api/devices");
+
+            if (!$response->successful()) {
+                return [];
+            }
+
+            return $response->json() ?? [];
+        } catch (\Exception $e) {
+            Log::warning('IoT: Failed to get devices', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    /**
+     * Obtiene un dispositivo específico por su ID.
+     */
+    public function getDevice(string $deviceId): ?array
+    {
+        try {
+            $response = Http::timeout($this->timeout)
+                ->get("{$this->baseUrl}/api/devices/{$deviceId}");
+
+            if (!$response->successful()) {
+                return null;
+            }
+
+            return $response->json();
+        } catch (\Exception $e) {
+            Log::warning('IoT: Failed to get device', [
+                'device_id' => $deviceId,
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Obtiene la ubicación de un vehículo específico por matrícula.
      */
     public function getLocationByPlate(string $licensePlate): ?array
     {
-        $location = DB::connection('mongodb')
-            ->table('vehicle_locations')
-            ->where('license_plate', $licensePlate)
-            ->orWhere('licensePlate', $licensePlate)
-            ->first();
+        $locations = $this->getLocations();
+        return $locations[$licensePlate] ?? null;
+    }
 
-        if (!$location) {
-            return null;
+    /**
+     * Envía un comando al vehículo (encender/apagar).
+     */
+    public function sendCommand(string $deviceId, string $action, int $relay = 0): array
+    {
+        try {
+            $response = Http::timeout($this->timeout)
+                ->withHeaders([
+                    'x-api-key' => $this->apiKey,
+                    'Content-Type' => 'application/json',
+                ])
+                ->post("{$this->baseUrl}/api/command", [
+                    'device_id' => $deviceId,
+                    'action' => $action,
+                    'relay' => $relay,
+                ]);
+
+            if (!$response->successful()) {
+                Log::error('IoT: Command failed', [
+                    'device_id' => $deviceId,
+                    'action' => $action,
+                    'status' => $response->status(),
+                ]);
+                return [
+                    'success' => false,
+                    'error' => 'Command failed: ' . $response->body(),
+                    'status' => $response->status()
+                ];
+            }
+
+            $result = $response->json();
+            Log::info('IoT: Command sent', [
+                'device_id' => $deviceId,
+                'action' => $action,
+            ]);
+
+            return [
+                'success' => true,
+                'result' => $result['result'] ?? 'sent',
+            ];
+        } catch (\Exception $e) {
+            Log::error('IoT: Command exception', [
+                'device_id' => $deviceId,
+                'action' => $action,
+                'error' => $e->getMessage()
+            ]);
+            return [
+                'success' => false,
+                'error' => 'Connection failed: ' . $e->getMessage()
+            ];
         }
+    }
 
-        return [
-            'latitude' => (float) ($location->latitude ?? $location->lat ?? 0),
-            'longitude' => (float) ($location->longitude ?? $location->lng ?? $location->lon ?? 0),
-            'active' => isset($location->active) ? (bool) $location->active : null,
-        ];
+    /**
+     * Enciende un vehículo.
+     */
+    public function turnOn(string $deviceId): array
+    {
+        return $this->sendCommand($deviceId, 'on');
+    }
+
+    /**
+     * Apaga un vehículo.
+     */
+    public function turnOff(string $deviceId): array
+    {
+        return $this->sendCommand($deviceId, 'off');
+    }
+
+    /**
+     * Verifica si el microservicio está disponible (health check).
+     */
+    public function healthCheck(): bool
+    {
+        try {
+            $response = Http::timeout(3)
+                ->get("{$this->baseUrl}/health");
+
+            return $response->successful();
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Verifica si un dispositivo específico está online.
+     */
+    public function isDeviceOnline(string $deviceId): bool
+    {
+        try {
+            $response = Http::timeout(3)
+                ->get("{$this->baseUrl}/api/ping/{$deviceId}");
+
+            return $response->successful() && ($response->json()['online'] ?? false);
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Actualiza la matrícula de un dispositivo IoT.
+     * Usado para vincular un dispositivo a un vehículo de PostgreSQL.
+     */
+    public function updateDevicePlate(string $deviceId, string $licensePlate): array
+    {
+        try {
+            $response = Http::timeout($this->timeout)
+                ->put("{$this->baseUrl}/api/devices/{$deviceId}", [
+                    'license_plate' => $licensePlate
+                ]);
+
+            if (!$response->successful()) {
+                Log::error('IoT: Failed to update device plate', [
+                    'device_id' => $deviceId,
+                    'license_plate' => $licensePlate,
+                    'status' => $response->status()
+                ]);
+                return [
+                    'success' => false,
+                    'error' => 'Failed to update: ' . $response->body()
+                ];
+            }
+
+            Log::info('IoT: Device plate updated', [
+                'device_id' => $deviceId,
+                'license_plate' => $licensePlate
+            ]);
+
+            return [
+                'success' => true,
+                'result' => $response->json()
+            ];
+        } catch (\Exception $e) {
+            Log::error('IoT: Update device exception', [
+                'device_id' => $deviceId,
+                'error' => $e->getMessage()
+            ]);
+            return [
+                'success' => false,
+                'error' => 'Connection failed: ' . $e->getMessage()
+            ];
+        }
     }
 }

@@ -17,10 +17,6 @@ class UserController extends Controller
      */
     public function index()
     {
-        $user = auth()->user();
-        if (request()->is('admin/*') && (!$user || $user->role !== 'admin')) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
         $this->authorize('viewAny', User::class);
 
         return response()->json(User::with('roles')->get());
@@ -43,10 +39,6 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        $user = auth()->user();
-        if (request()->is('admin/*') && (!$user || $user->role !== 'admin')) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
         $this->authorize('create', User::class);
 
         $data = $request->validate([
@@ -80,10 +72,6 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        $authUser = auth()->user();
-        if (request()->is('admin/*') && (!$authUser || $authUser->role !== 'admin')) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
         $this->authorize('update', $user);
 
         $data = $request->validate([
@@ -128,10 +116,6 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        $authUser = auth()->user();
-        if (request()->is('admin/*') && (!$authUser || $authUser->role !== 'admin')) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
         $this->authorize('delete', $user);
 
         $user->delete();
