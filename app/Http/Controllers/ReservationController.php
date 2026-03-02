@@ -18,13 +18,6 @@ class ReservationController extends Controller
 
         $user = Auth::user();
 
-        // Admin o Manager puede ver todas
-        if ($user->hasPermissionTo('reservations.manage')) {
-            return Reservation::with(['user', 'vehicle', 'trip'])
-                ->orderBy('scheduled_start', 'desc')
-                ->get();
-        }
-
         return Reservation::where('user_id', $user->id)
             ->with(['vehicle', 'trip'])
             ->orderBy('scheduled_start', 'desc')

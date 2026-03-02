@@ -9,24 +9,22 @@ use Illuminate\Support\Facades\Auth;
 
 class TicketController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
+        // Detectar si la petición viene del prefijo /admin
+        $isAdminRequest = $request->segment(2) === 'admin';
 
-        // Admin o Soporte ve todos
-        if ($user->hasPermissionTo('tickets.manage')) {
+        // Admin o Soporte ve todos SOLO si es una petición desde la ruta de admin
+        if ($isAdminRequest && $user->hasPermissionTo('tickets.manage')) {
             return Ticket::with(['user', 'messages'])->orderBy('created_at', 'desc')->get();
         }
 
-        // Usuario normal ve los suyos
-        if ($user->hasPermissionTo('tickets.view')) {
-            return Ticket::where('user_id', $user->id)
-                ->with('messages')
-                ->orderBy('created_at', 'desc')
-                ->get();
-        }
-
-        return response()->json(['message' => 'Unauthorized'], 403);
+        // De lo contrario (cliente o admin en vista cliente), ver solo los propios
+        return Ticket::where('user_id', $user->id)
+            ->with('messages')
+            ->orderBy('created_at', 'desc')
+            ->get();
     }
 
     public function store(Request $request)

@@ -31,7 +31,13 @@ class VehicleController extends Controller
     {
         $query = Vehicle::query();
         $user = auth()->user();
-        $isAdmin = $user && $user->hasRole('admin');
+        
+        // Detección mejorada
+        $isAdminUser = $user && ($user->hasRole('Admin') || $user->hasRole('admin'));
+        $isAdminRoute = $request->is('api/admin/*') || $request->is('admin/*');
+        
+        // Solo mostramos todo si es un admin en una ruta de administración
+        $shouldShowAll = $isAdminUser && $isAdminRoute;
 
         // Búsqueda general por license_plate, brand o model
         if ($request->filled('search')) {
@@ -56,14 +62,14 @@ class VehicleController extends Controller
             $query->where('model', 'ILIKE', "%{$request->input('model')}%");
         }
 
-        if ($isAdmin) {
-            // Admin: puede filtrar por cualquier estado
+        if (!$shouldShowAll) {
+            // Cliente (o admin en vista pública): solo mostrar vehículos operativos (active=false en postgres)
+            $query->where('active', false);
+        } else {
+            // Admin: puede filtrar por cualquier estado si lo desea (pero por defecto ve todos)
             if ($request->has('active')) {
                 $query->where('active', filter_var($request->input('active'), FILTER_VALIDATE_BOOLEAN));
             }
-        } else {
-            // Cliente: solo mostrar vehículos con active = false (disponibles en postgres)
-            $query->where('active', false);
         }
 
         $vehicles = $query->orderBy('created_at', 'desc')
@@ -71,7 +77,7 @@ class VehicleController extends Controller
 
         $locations = $this->locationService->getLocations();
 
-        // Attach latitude/longitude (and mongo_active) from Mongo to each vehicle in the paginated collection
+        // Adjuntamos datos de telemetría de MongoDB
         $vehicles->getCollection()->transform(function ($vehicle) use ($locations) {
             $location = $locations[$vehicle->license_plate] ?? null;
             $vehicle->setAttribute('latitude', $location['latitude'] ?? null);
@@ -80,9 +86,10 @@ class VehicleController extends Controller
             return $vehicle;
         });
 
-        // Para clientes: filtrar adicionalmente por mongo_active = false (no en uso)
-        if (!$isAdmin) {
+        // Para clientes: filtrar adicionalmente por disponibilidad real en MongoDB
+        if (!$shouldShowAll) {
             $filtered = $vehicles->getCollection()->filter(function ($vehicle) {
+                // En vista de cliente, solo mostramos los que no tienen sesión activa
                 return $vehicle->mongo_active === false;
             })->values();
             
