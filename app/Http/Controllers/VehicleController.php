@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Vehicle;
+use App\Models\Reservation;
 use App\Http\Requests\Vehicle\StoreVehicleRequest;
 use App\Http\Requests\Vehicle\UpdateVehicleRequest;
 use App\Services\VehicleLocationService;
@@ -29,17 +30,18 @@ class VehicleController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        // Limpiar reservas caducadas globalmente antes de procesar disponibilidad
+        Reservation::where('status', 'pending')
+            ->where('activation_deadline', '<', now())
+            ->update(['status' => 'expired']);
+
         $query = Vehicle::query();
         $user = auth()->user();
-        
-        // Detección mejorada
+        $isAdminRequest = $request->segment(2) === 'admin';
         $isAdminUser = $user && ($user->hasRole('Admin') || $user->hasRole('admin'));
-        $isAdminRoute = $request->is('api/admin/*') || $request->is('admin/*');
-        
-        // Solo mostramos todo si es un admin en una ruta de administración
-        $shouldShowAll = $isAdminUser && $isAdminRoute;
+        $shouldShowAll = $isAdminUser && $isAdminRequest;
 
-        // Búsqueda general por license_plate, brand o model
+        // Búsqueda y filtros...
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
@@ -49,48 +51,44 @@ class VehicleController extends Controller
             });
         }
 
-        // Filtros específicos
-        if ($request->filled('license_plate')) {
-            $query->where('license_plate', 'ILIKE', "%{$request->input('license_plate')}%");
-        }
-
-        if ($request->filled('brand')) {
-            $query->where('brand', 'ILIKE', "%{$request->input('brand')}%");
-        }
-
-        if ($request->filled('model')) {
-            $query->where('model', 'ILIKE', "%{$request->input('model')}%");
-        }
-
         if (!$shouldShowAll) {
-            // Cliente (o admin en vista pública): solo mostrar vehículos operativos (active=false en postgres)
             $query->where('active', false);
-        } else {
-            // Admin: puede filtrar por cualquier estado si lo desea (pero por defecto ve todos)
-            if ($request->has('active')) {
-                $query->where('active', filter_var($request->input('active'), FILTER_VALIDATE_BOOLEAN));
-            }
         }
 
         $vehicles = $query->orderBy('created_at', 'desc')
                           ->paginate($request->input('per_page', 15));
 
         $locations = $this->locationService->getLocations();
+        
+        // Reservas para filtrado
+        $currentReservations = Reservation::whereIn('status', ['pending', 'active'])
+            ->get()
+            ->groupBy('vehicle_id');
 
-        // Adjuntamos datos de telemetría de MongoDB
-        $vehicles->getCollection()->transform(function ($vehicle) use ($locations) {
+        $vehicles->getCollection()->transform(function ($vehicle) use ($locations, $currentReservations, $user, $shouldShowAll) {
             $location = $locations[$vehicle->license_plate] ?? null;
-            $vehicle->setAttribute('latitude', $location['latitude'] ?? null);
-            $vehicle->setAttribute('longitude', $location['longitude'] ?? null);
-            $vehicle->setAttribute('mongo_active', $location['active'] ?? null);
+            $reservation = $currentReservations->get($vehicle->id)?->first();
+            
+            $isMine = $reservation && $reservation->user_id === $user?->id;
+            $isOccupied = ($location['active'] ?? false) === true;
+            $status = $isOccupied ? 'running' : ($reservation ? 'reserved' : 'available');
+
+            $vehicle->setAttribute('latitude', isset($location['latitude']) ? (float)$location['latitude'] : null);
+            $vehicle->setAttribute('longitude', isset($location['longitude']) ? (float)$location['longitude'] : null);
+            $vehicle->setAttribute('mongo_active', $isOccupied);
+            $vehicle->setAttribute('status', $status);
+            $vehicle->setAttribute('is_mine', $isMine);
+            
             return $vehicle;
         });
 
-        // Para clientes: filtrar adicionalmente por disponibilidad real en MongoDB
         if (!$shouldShowAll) {
-            $filtered = $vehicles->getCollection()->filter(function ($vehicle) {
-                // En vista de cliente, solo mostramos los que no tienen sesión activa
-                return $vehicle->mongo_active === false;
+            // Para clientes: Solo disponibles O el mío reservado, Y QUE TENGAN RELACIÓN EN MONGO
+            $filtered = $vehicles->getCollection()->filter(function ($v) {
+                $hasMongoRelation = $v->latitude !== null && $v->longitude !== null;
+                $isAvailable = $v->status === 'available' || ($v->status === 'reserved' && $v->is_mine);
+                
+                return $hasMongoRelation && $isAvailable;
             })->values();
             
             $vehicles->setCollection($filtered);
@@ -156,49 +154,89 @@ class VehicleController extends Controller
     }
 
     /**
-     * Obtener vehículos con ubicaciones para el mapa (solo disponibles para clientes)
-     * Solo muestra vehículos con active=false en PostgreSQL y mongo_active=false (no en uso)
+     * Obtener vehículos con ubicaciones para el mapa (VISTA CLIENTE)
+     * Reglas:
+     * 1. Solo vehículos habilitados (active=false en tu convención actual).
+     * 2. Solo vehículos SIN reserva activa/pendiente por otros.
+     * 3. INCLUIR el vehículo reservado por el usuario actual (si tiene).
      */
-    public function map(): JsonResponse // /vehicles/map para cliente
+    public function map(): JsonResponse
     {
         $this->authorize('viewAny', Vehicle::class);
+        $user = auth()->user();
 
+        // 1. Limpiar reservas caducadas globalmente (para asegurar datos frescos)
+        Reservation::where('status', 'pending')
+            ->where('activation_deadline', '<', now())
+            ->update(['status' => 'expired']);
+
+        // 2. Obtener vehículos habilitados
         $vehicles = Vehicle::where('active', false)->get();
         $locations = $this->locationService->getLocations();
 
-        $result = $vehicles->map(function ($vehicle) use ($locations) {
+        // 3. Obtener reservas actuales (pendientes o activas)
+        $currentReservations = Reservation::whereIn('status', ['pending', 'active'])
+            ->get()
+            ->groupBy('vehicle_id');
+
+        $result = $vehicles->map(function ($vehicle) use ($locations, $currentReservations, $user) {
             $location = $locations[$vehicle->license_plate] ?? null;
+            $reservation = $currentReservations->get($vehicle->id)?->first();
+            
+            $isReservedByMe = $reservation && $reservation->user_id === $user->id;
+            $isReservedByOthers = $reservation && $reservation->user_id !== $user->id;
+            
+            // Determinar estado real
+            $isOccupied = ($location['active'] ?? false) === true; // En marcha (Mongo)
+            $isPending = $reservation && $reservation->status === 'pending'; // Reservado (Postgres)
 
             return [
                 'id' => $vehicle->id,
                 'plate' => $vehicle->license_plate,
                 'brand' => $vehicle->brand,
                 'model' => $vehicle->model,
-                'postgres_active' => (bool) $vehicle->active,
-                'mongo_active' => $location['active'] ?? null,
-                'latitude' => $location['latitude'] ?? null,
-                'longitude' => $location['longitude'] ?? null,
+                'latitude' => isset($location['latitude']) ? (float)$location['latitude'] : null,
+                'longitude' => isset($location['longitude']) ? (float)$location['longitude'] : null,
+                'postgres_active' => $reservation ? true : false, // Reservado en Postgres
+                'mongo_active' => $isOccupied, // En marcha en Mongo
+                'is_mine' => $isReservedByMe,
+                'status' => $isOccupied ? 'running' : ($isPending ? 'reserved' : 'available'),
+                'available' => !$isReservedByOthers && !$isOccupied
             ];
         })
-        // Solo vehículos con coordenadas, postgres_active=false y mongo_active=false (disponibles)
-        ->filter(fn($v) => $v['latitude'] !== null && $v['longitude'] !== null && $v['mongo_active'] === false)->values();
+        // Filtro para el mapa de cliente:
+        // 1. Mostrar vehículos LIBRES para todos.
+        // 2. Mostrar vehículos RESERVADOS solo si son del usuario actual.
+        // 3. OCULTAR vehículos en marcha (running) para todos.
+        ->filter(function($v) {
+            return $v['latitude'] !== null && 
+                   $v['longitude'] !== null && 
+                   ($v['status'] === 'available' || ($v['status'] === 'reserved' && $v['is_mine']));
+        })->values();
 
         return response()->json($result);
     }
 
 
     /**
-     * Obtener vehículos para admin (incluye inactivos y datos extra)
+     * Obtener vehículos para admin (Vista Gestión Total)
      */
     public function adminMap(): JsonResponse
     {
         $this->authorize('viewAny', Vehicle::class);
 
+        // Limpiar reservas caducadas
+        Reservation::where('status', 'pending')
+            ->where('activation_deadline', '<', now())
+            ->update(['status' => 'expired']);
+
         $vehicles = Vehicle::all();
         $locations = $this->locationService->getLocations();
+        $currentReservations = Reservation::whereIn('status', ['pending', 'active'])->get()->groupBy('vehicle_id');
 
-        $result = $vehicles->map(function ($vehicle) use ($locations) {
+        $result = $vehicles->map(function ($vehicle) use ($locations, $currentReservations) {
             $location = $locations[$vehicle->license_plate] ?? null;
+            $reservation = $currentReservations->get($vehicle->id)?->first();
 
             return [
                 'id' => (int) $vehicle->id,
@@ -207,13 +245,14 @@ class VehicleController extends Controller
                 'model' => (string) $vehicle->model,
                 'latitude' => isset($location['latitude']) ? (float) $location['latitude'] : null,
                 'longitude' => isset($location['longitude']) ? (float) $location['longitude'] : null,
-                'postgres_active' => (bool) $vehicle->active,
+                'postgres_active' => $reservation ? true : false,
                 'mongo_active' => isset($location['active']) ? (bool) $location['active'] : false,
                 'online' => isset($location['online']) ? (bool) $location['online'] : false,
                 'device_id' => $location['device_id'] ?? null,
                 'speed' => isset($location['speed']) ? (float) $location['speed'] : 0,
                 'rpm' => isset($location['rpm']) ? (int) $location['rpm'] : 0,
                 'engine_temp' => isset($location['engine_temp']) ? (float) $location['engine_temp'] : 0,
+                'status' => (isset($location['active']) && $location['active']) ? 'running' : ($reservation ? 'reserved' : 'available'),
             ];
         })
         ->filter(fn($v) => $v['latitude'] !== null && $v['longitude'] !== null)
@@ -239,8 +278,8 @@ class VehicleController extends Controller
                 'plate' => $vehicle->license_plate,
                 'brand' => $vehicle->brand,
                 'model' => $vehicle->model,
-                'latitude' => $location['latitude'] ?? null,
-                'longitude' => $location['longitude'] ?? null,
+                'latitude' => isset($location['latitude']) ? (float)$location['latitude'] : null,
+                'longitude' => isset($location['longitude']) ? (float)$location['longitude'] : null,
                 'available' => true,
             ];
         })

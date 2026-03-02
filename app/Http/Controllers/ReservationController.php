@@ -17,11 +17,20 @@ class ReservationController extends Controller
         $this->authorize('viewAny', Reservation::class);
 
         $user = Auth::user();
+        
+        // Limpieza automática de reservas caducadas del usuario antes de listar
+        $this->cleanupExpiredReservations($user->id);
 
         return Reservation::where('user_id', $user->id)
             ->with(['vehicle', 'trip'])
             ->orderBy('scheduled_start', 'desc')
-            ->get();
+            ->get()
+            ->map(function($res) {
+                $res->remaining_seconds = $res->status === 'pending' 
+                    ? max(0, now()->diffInSeconds($res->activation_deadline, false))
+                    : 0;
+                return $res;
+            });
     }
 
     public function store(Request $request)
@@ -30,44 +39,83 @@ class ReservationController extends Controller
 
         $validated = $request->validate([
             'vehicle_id' => 'required|exists:vehicles,id',
-            'scheduled_start' => 'required|date|after_or_equal:now',
+            'scheduled_start' => 'nullable|date',
         ]);
 
-        return DB::transaction(function () use ($validated, $request) {
+        $user = $request->user();
+
+        // 1. Limpiar reservas caducadas del usuario
+        $this->cleanupExpiredReservations($user->id);
+
+        // 2. Verificar si el usuario ya tiene una reserva activa o pendiente
+        $hasActiveBooking = Reservation::where('user_id', $user->id)
+            ->whereIn('status', ['active', 'pending'])
+            ->exists();
+
+        if ($hasActiveBooking) {
+            return response()->json([
+                'message' => 'Ya tienes una reserva activa o pendiente. Finalízala antes de realizar otra.'
+            ], 422);
+        }
+
+        return DB::transaction(function () use ($validated, $user) {
             $vehicle = Vehicle::where('id', $validated['vehicle_id'])->lockForUpdate()->firstOrFail();
             
-            $requestedStart = Carbon::parse($validated['scheduled_start']);
-
+            // 3. Verificar si el vehículo está libre
             $isBusy = Reservation::where('vehicle_id', $vehicle->id)
-                ->where(function ($query) {
-                    $query->where('status', 'active')
-                          ->orWhere(function ($q) {
-                              $q->where('status', 'pending')
-                                ->where('activation_deadline', '>', now());
-                          });
-                })
+                ->whereIn('status', ['active', 'pending'])
                 ->exists();
 
             if ($isBusy) {
                 return response()->json([
-                    'message' => 'Vehicle unavailable or currently in use.'
+                    'message' => 'Este vehículo ya no está disponible.'
                 ], 409);
             }
 
-            $activationDeadline = $requestedStart->copy()->addMinutes(20);
+            // Si no se envía hora, usamos "ahora"
+            $requestedStart = isset($validated['scheduled_start']) 
+                ? Carbon::parse($validated['scheduled_start']) 
+                : now();
 
-            $reservation = $request->user()->reservations()->create([
+            // 4. Ventana de 10 minutos para activar
+            $activationDeadline = $requestedStart->copy()->addMinutes(10);
+
+            $reservation = $user->reservations()->create([
                 'vehicle_id' => $vehicle->id,
                 'scheduled_start' => $requestedStart,
                 'activation_deadline' => $activationDeadline,
                 'status' => 'pending',
             ]);
 
+            $reservation->remaining_seconds = 600; // 10 minutes
+
             return response()->json([
-                'message' => 'Reservation created. You have 20 minutes to activate.',
+                'message' => 'Reserva creada con éxito. Tienes 10 minutos para activarla.',
                 'data' => $reservation
             ], 201);
         });
+    }
+
+    /**
+     * Helper para cancelar automáticamente reservas que han superado su tiempo límite
+     */
+    private function cleanupExpiredReservations($userId = null)
+    {
+        $expiredQuery = Reservation::where('status', 'pending')
+            ->where('activation_deadline', '<', now());
+            
+        if ($userId) {
+            $expiredQuery->where('user_id', $userId);
+        }
+
+        $expiredReservations = $expiredQuery->get();
+
+        foreach ($expiredReservations as $res) {
+            DB::transaction(function () use ($res) {
+                $res->update(['status' => 'expired']);
+                $res->vehicle()->update(['active' => false]);
+            });
+        }
     }
 
     public function show(Reservation $reservation)
@@ -85,12 +133,14 @@ class ReservationController extends Controller
         }
 
         if (now()->greaterThan($reservation->activation_deadline)) {
-            $reservation->update(['status' => 'expired']);
+            $this->cleanupExpiredReservations();
             return response()->json(['message' => 'Reservation expired.'], 403);
         }
 
         $trip = DB::transaction(function () use ($reservation) {
             $reservation->update(['status' => 'active']);
+            // Marcar vehículo como OCUPADO en Postgres
+            $reservation->vehicle()->update(['active' => true]);
             
             return Trip::create([
                 'reservation_id' => $reservation->id,
@@ -117,10 +167,10 @@ class ReservationController extends Controller
 
         $start = Carbon::parse($trip->engine_started_at);
         $end = now();
-        $minutes = max(1, $start->diffInMinutes($end)); 
+        $minutes = (int) max(1, $start->diffInMinutes($end)); 
         
-        $pricePerMinute = $reservation->vehicle->price_per_minute ?? 0.15;
-        $amount = round($minutes * $pricePerMinute, 2);
+        $pricePerMinute = (float) ($reservation->vehicle->price_per_minute ?? 0.15);
+        $amount = (float) round($minutes * $pricePerMinute, 2);
 
         DB::transaction(function () use ($reservation, $trip, $end, $amount, $minutes) {
             $trip->update([
@@ -129,6 +179,8 @@ class ReservationController extends Controller
                 'minutes_driven' => $minutes
             ]);
             $reservation->update(['status' => 'completed']);
+            // Liberar vehículo en Postgres
+            $reservation->vehicle()->update(['active' => false]);
         });
 
         return response()->json([
@@ -146,7 +198,11 @@ class ReservationController extends Controller
             return response()->json(['message' => 'Only pending reservations can be cancelled.'], 400);
         }
 
-        $reservation->update(['status' => 'cancelled']);
+        DB::transaction(function () use ($reservation) {
+            $reservation->update(['status' => 'cancelled']);
+            $reservation->vehicle()->update(['active' => false]);
+        });
+
         return response()->json(['message' => 'Reservation cancelled.']);
     }
 
@@ -181,6 +237,7 @@ class ReservationController extends Controller
                 'notes' => $noteText 
             ]);
             $reservation->update(['status' => 'completed']);
+            $reservation->vehicle()->update(['active' => false]);
         });
 
         return response()->json([
