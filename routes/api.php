@@ -63,10 +63,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('reservations/{reservation}/activate', [ReservationController::class, 'activate']);
     Route::post('reservations/{reservation}/finish', [ReservationController::class, 'finish']);
     Route::post('reservations/{reservation}/cancel', [ReservationController::class, 'cancel']);
+    Route::post('reservations/{reservation}/on', [ReservationController::class, 'turnOn']);
+    Route::post('reservations/{reservation}/off', [ReservationController::class, 'turnOff']);
     Route::post('reservations/{reservation}/force-finish', [ReservationController::class, 'forceFinish']);
 
     // IoT endpoints (dispositivos y comandos)
     Route::prefix('iot')->group(function () {
+        Route::get('logs', [IoTController::class, 'logs']);
         Route::get('devices', [IoTController::class, 'devices']);
         Route::get('devices/{deviceId}', [IoTController::class, 'device']);
         Route::get('devices/{deviceId}/ping', [IoTController::class, 'ping']);

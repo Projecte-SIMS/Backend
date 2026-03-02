@@ -5,13 +5,23 @@ namespace App\Http\Controllers;
 use App\Models\Reservation;
 use App\Models\Vehicle;
 use App\Models\Trip;
+use App\Models\CommandLog;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Services\VehicleLocationService;
+use Illuminate\Http\JsonResponse;
 
 class ReservationController extends Controller
 {
+    private VehicleLocationService $iotService;
+
+    public function __construct(VehicleLocationService $iotService)
+    {
+        $this->iotService = $iotService;
+    }
+
     public function index()
     {
         $this->authorize('viewAny', Reservation::class);
@@ -21,14 +31,36 @@ class ReservationController extends Controller
         // Limpieza automática de reservas caducadas del usuario antes de listar
         $this->cleanupExpiredReservations($user->id);
 
+        $locations = $this->iotService->getLocations();
+
         return Reservation::where('user_id', $user->id)
             ->with(['vehicle', 'trip'])
             ->orderBy('scheduled_start', 'desc')
             ->get()
-            ->map(function($res) {
+            ->map(function($res) use ($locations) {
                 $res->remaining_seconds = $res->status === 'pending' 
                     ? max(0, now()->diffInSeconds($res->activation_deadline, false))
                     : 0;
+                
+                if ($res->vehicle) {
+                    $loc = $locations[$res->vehicle->license_plate] ?? null;
+                    
+                    // Asegurar coordenadas en la raíz para el frontend
+                    $res->latitude = isset($loc['latitude']) ? (float)$loc['latitude'] : null;
+                    $res->longitude = isset($loc['longitude']) ? (float)$loc['longitude'] : null;
+
+                    if ($res->status === 'active') {
+                        $res->telemetry = [
+                            'online' => $loc['online'] ?? false,
+                            'speed' => $loc['speed'] ?? 0,
+                            'rpm' => $loc['rpm'] ?? 0,
+                            'engine_temp' => $loc['engine_temp'] ?? 0,
+                            'battery_voltage' => $loc['battery_voltage'] ?? 12.6,
+                            'device_id' => $loc['device_id'] ?? null,
+                        ];
+                    }
+                }
+                
                 return $res;
             });
     }
@@ -163,6 +195,17 @@ class ReservationController extends Controller
             return response()->json(['message' => 'Only active reservations can be finished.'], 400);
         }
 
+        // 1. Apagar el motor automáticamente antes de finalizar
+        try {
+            $loc = $this->iotService->getLocations()[$reservation->vehicle->license_plate] ?? null;
+            if ($loc && isset($loc['device_id'])) {
+                $this->iotService->turnOff($loc['device_id']);
+            }
+        } catch (\Exception $e) {
+            // Log error but continue finishing trip so user isn't stuck
+            \Log::error("Failed to auto-turn-off engine on finish: " . $e->getMessage());
+        }
+
         $trip = Trip::where('reservation_id', $reservation->id)->firstOrFail();
 
         $start = Carbon::parse($trip->engine_started_at);
@@ -171,6 +214,22 @@ class ReservationController extends Controller
         
         $pricePerMinute = (float) ($reservation->vehicle->price_per_minute ?? 0.15);
         $amount = (float) round($minutes * $pricePerMinute, 2);
+
+        // Obtener resumen de ruta antes de limpiar
+        $routeData = [];
+        $avgSpeed = 0;
+        try {
+            if ($loc && isset($loc['device_id'])) {
+                $routeData = $this->iotService->getRoute($loc['device_id']);
+                if (count($routeData) > 0) {
+                    $avgSpeed = array_sum(array_column($routeData, 'speed')) / count($routeData);
+                }
+                // Limpiar ruta para el siguiente usuario
+                $this->iotService->clearRoute($loc['device_id']);
+            }
+        } catch (\Exception $e) {
+            \Log::error("Failed to get route summary: " . $e->getMessage());
+        }
 
         DB::transaction(function () use ($reservation, $trip, $end, $amount, $minutes) {
             $trip->update([
@@ -186,7 +245,11 @@ class ReservationController extends Controller
         return response()->json([
             'message' => 'Trip finished.',
             'minutes' => $minutes,
-            'cost' => $amount . '€'
+            'cost' => $amount . '€',
+            'summary' => [
+                'avg_speed' => round($avgSpeed, 1),
+                'points' => $routeData
+            ]
         ]);
     }
 
@@ -245,5 +308,57 @@ class ReservationController extends Controller
             'cost' => $amount . '€',
             'minutes' => $minutes
         ]);
+    }
+
+    public function turnOn(Reservation $reservation): JsonResponse
+    {
+        $this->authorize('update', $reservation);
+        
+        if ($reservation->status !== 'active') {
+            return response()->json(['message' => 'Vehicle must be active to send commands'], 403);
+        }
+
+        $loc = $this->iotService->getLocations()[$reservation->vehicle->license_plate] ?? null;
+        if (!$loc || !isset($loc['device_id'])) {
+            return response()->json(['message' => 'IoT Device not found'], 404);
+        }
+
+        $result = $this->iotService->turnOn($loc['device_id']);
+
+        // Auditoría de comando (Cliente)
+        CommandLog::create([
+            'user_id' => auth()->id(),
+            'device_id' => $loc['device_id'],
+            'action' => 'on',
+            'status' => $result['success'] ? 'sent' : 'failed',
+        ]);
+
+        return response()->json($result);
+    }
+
+    public function turnOff(Reservation $reservation): JsonResponse
+    {
+        $this->authorize('update', $reservation);
+        
+        if ($reservation->status !== 'active') {
+            return response()->json(['message' => 'Vehicle must be active to send commands'], 403);
+        }
+
+        $loc = $this->iotService->getLocations()[$reservation->vehicle->license_plate] ?? null;
+        if (!$loc || !isset($loc['device_id'])) {
+            return response()->json(['message' => 'IoT Device not found'], 404);
+        }
+
+        $result = $this->iotService->turnOff($loc['device_id']);
+
+        // Auditoría de comando (Cliente)
+        CommandLog::create([
+            'user_id' => auth()->id(),
+            'device_id' => $loc['device_id'],
+            'action' => 'off',
+            'status' => $result['success'] ? 'sent' : 'failed',
+        ]);
+
+        return response()->json($result);
     }
 }

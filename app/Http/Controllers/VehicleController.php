@@ -252,6 +252,7 @@ class VehicleController extends Controller
                 'speed' => isset($location['speed']) ? (float) $location['speed'] : 0,
                 'rpm' => isset($location['rpm']) ? (int) $location['rpm'] : 0,
                 'engine_temp' => isset($location['engine_temp']) ? (float) $location['engine_temp'] : 0,
+                'battery_voltage' => isset($location['battery_voltage']) ? (float) $location['battery_voltage'] : 12.6,
                 'status' => (isset($location['active']) && $location['active']) ? 'running' : ($reservation ? 'reserved' : 'available'),
             ];
         })

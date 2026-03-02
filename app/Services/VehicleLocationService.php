@@ -198,6 +198,42 @@ class VehicleLocationService
     }
 
     /**
+     * Obtiene el historial de ruta de un dispositivo.
+     */
+    public function getRoute(string $deviceId): array
+    {
+        try {
+            $response = Http::timeout($this->timeout)
+                ->get("{$this->baseUrl}/api/devices/{$deviceId}/route");
+
+            if (!$response->successful()) {
+                return [];
+            }
+
+            return $response->json() ?? [];
+        } catch (\Exception $e) {
+            Log::warning('IoT: Failed to get route', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    /**
+     * Limpia el historial de ruta de un dispositivo.
+     */
+    public function clearRoute(string $deviceId): bool
+    {
+        try {
+            $response = Http::timeout($this->timeout)
+                ->post("{$this->baseUrl}/api/devices/{$deviceId}/route/clear");
+
+            return $response->successful();
+        } catch (\Exception $e) {
+            Log::warning('IoT: Failed to clear route', ['error' => $e->getMessage()]);
+            return false;
+        }
+    }
+
+    /**
      * Enciende un vehículo.
      */
     public function turnOn(string $deviceId): array

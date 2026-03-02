@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Vehicle;
+use App\Models\CommandLog;
 use App\Services\VehicleLocationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -50,6 +51,15 @@ class IoTController extends Controller
     {
         $result = $this->iotService->turnOn($deviceId);
 
+        // Log the command
+        CommandLog::create([
+            'user_id' => auth()->id(),
+            'device_id' => $deviceId,
+            'action' => 'on',
+            'payload' => [],
+            'status' => $result['success'] ? 'sent' : 'failed',
+        ]);
+
         if (!$result['success']) {
             return response()->json([
                 'message' => 'Failed to turn on vehicle',
@@ -69,6 +79,15 @@ class IoTController extends Controller
     public function turnOff(Request $request, string $deviceId): JsonResponse
     {
         $result = $this->iotService->turnOff($deviceId);
+
+        // Log the command
+        CommandLog::create([
+            'user_id' => auth()->id(),
+            'device_id' => $deviceId,
+            'action' => 'off',
+            'payload' => [],
+            'status' => $result['success'] ? 'sent' : 'failed',
+        ]);
 
         if (!$result['success']) {
             return response()->json([
@@ -98,6 +117,15 @@ class IoTController extends Controller
             $request->input('action'),
             $request->input('relay', 0)
         );
+
+        // Log the command
+        CommandLog::create([
+            'user_id' => auth()->id(),
+            'device_id' => $deviceId,
+            'action' => $request->input('action'),
+            'payload' => $request->all(),
+            'status' => $result['success'] ? 'sent' : 'failed',
+        ]);
 
         if (!$result['success']) {
             return response()->json([
@@ -195,5 +223,14 @@ class IoTController extends Controller
             ->get(['id', 'license_plate', 'brand', 'model']);
 
         return response()->json($vehicles);
+    }
+
+    /**
+     * Obtiene los logs de comandos (Admin).
+     */
+    public function logs(): JsonResponse
+    {
+        $logs = CommandLog::with('user')->orderBy('created_at', 'desc')->paginate(50);
+        return response()->json($logs);
     }
 }
