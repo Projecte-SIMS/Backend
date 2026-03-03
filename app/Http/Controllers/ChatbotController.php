@@ -59,9 +59,16 @@ class ChatbotController extends Controller
         $baseUrl = env('OPEN_WEBUI_BASE_URL');
         $model = env('OPEN_WEBUI_MODEL');
 
-        if (!$apiKey) {
+        // Validar configuración
+        $missingConfig = [];
+        if (!$apiKey) $missingConfig[] = 'OPEN_WEBUI_API_KEY';
+        if (!$baseUrl) $missingConfig[] = 'OPEN_WEBUI_BASE_URL';
+        if (!$model) $missingConfig[] = 'OPEN_WEBUI_MODEL';
+
+        if (!empty($missingConfig)) {
+            Log::error('Chatbot configuration missing', ['missing' => $missingConfig]);
             return response()->json([
-                'error' => 'Chatbot API key not configured.'
+                'error' => 'El chatbot no está configurado correctamente. Faltan las siguientes variables de entorno: ' . implode(', ', $missingConfig)
             ], 500);
         }
 
@@ -100,17 +107,37 @@ class ChatbotController extends Controller
                 Log::error('Open WebUI API error', [
                     'status' => $response->status(),
                     'body' => $response->body(),
+                    'url' => $baseUrl . '/chat/completions',
                 ]);
+                
+                $errorMessage = 'Error al conectar con el servicio de chatbot.';
+                if ($response->status() === 401) {
+                    $errorMessage = 'API Key inválida. Verifica OPEN_WEBUI_API_KEY en el archivo .env';
+                } elseif ($response->status() === 404) {
+                    $errorMessage = 'Modelo no encontrado. Verifica OPEN_WEBUI_MODEL en el archivo .env (actual: ' . $model . ')';
+                } elseif ($response->status() === 503) {
+                    $errorMessage = 'El servicio de chatbot no está disponible. Verifica que Open WebUI esté ejecutándose en: ' . $baseUrl;
+                }
+                
                 return response()->json([
-                    'error' => 'Error communicating with the chatbot service.'
+                    'error' => $errorMessage
                 ], $response->status());
             }
 
             return $response->json();
         } catch (\Exception $e) {
-            Log::error('Chatbot exception', ['message' => $e->getMessage()]);
+            Log::error('Chatbot exception', [
+                'message' => $e->getMessage(),
+                'url' => $baseUrl . '/chat/completions',
+            ]);
+            
+            $errorMessage = 'Error inesperado al conectar con el chatbot.';
+            if (str_contains($e->getMessage(), 'Could not resolve host') || str_contains($e->getMessage(), 'Connection refused')) {
+                $errorMessage = 'No se puede conectar con el servidor de chatbot. Verifica que Open WebUI esté ejecutándose en: ' . $baseUrl;
+            }
+            
             return response()->json([
-                'error' => 'An unexpected error occurred.'
+                'error' => $errorMessage
             ], 500);
         }
     }
