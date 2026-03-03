@@ -14,7 +14,6 @@ Estos endpoints no requieren autenticación previa.
 | :--- | :--- | :--- | :--- |
 | POST | `/api/login` | AuthController@login | Inicia sesión y devuelve un token de acceso (Sanctum). Rate limit: 5/min. |
 | POST | `/api/register` | AuthController@register | Registra un nuevo usuario con rol Client. Rate limit: 5/min. |
-| GET | `/api/iot/health` | IoTController@health | Verifica el estado del microservicio IoT. |
 | GET | `/api/public/vehicles/map` | VehicleController@publicMap | Mapa público de vehículos disponibles (sin autenticación). |
 
 ---
@@ -68,6 +67,7 @@ Requieren una cabecera `Authorization: Bearer {token}` válida.
 ### 2.6. Dispositivos IoT (Lectura)
 | Método | Endpoint | Acción | Descripción |
 | :--- | :--- | :--- | :--- |
+| GET | `/api/iot/health` | IoTController@health | Verifica el estado del microservicio IoT. |
 | GET | `/api/iot/logs` | IoTController@logs | Lista logs de comandos IoT enviados. |
 | GET | `/api/iot/devices` | IoTController@devices | Lista todos los dispositivos IoT conectados. |
 | GET | `/api/iot/devices/{deviceId}` | IoTController@device | Detalle de un dispositivo específico. |

@@ -25,8 +25,7 @@ Route::post('/register', [AuthController::class, 'register'])
     ->middleware('throttle:login')
     ->name('register');
 
-// Health check del microservicio IoT (público para monitorización)
-Route::get('/iot/health', [IoTController::class, 'health']);
+
 
 // Endpoint PÚBLICO para ver vehículos disponibles en el mapa (sin autenticación)
 Route::get('/public/vehicles/map', [VehicleController::class, 'publicMap']);
@@ -69,6 +68,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // IoT endpoints (dispositivos y comandos)
     Route::prefix('iot')->group(function () {
+        Route::get('health', [IoTController::class, 'health']);
         Route::get('logs', [IoTController::class, 'logs']);
         Route::get('devices', [IoTController::class, 'devices']);
         Route::get('devices/{deviceId}', [IoTController::class, 'device']);
