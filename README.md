@@ -109,20 +109,23 @@ project-sims-backend/
 
 ---
 
-## Inicio Rápido (Despliegue con Docker)
+## Inicio Rápido (Despliegue Unificado)
+
+Para levantar el backend junto con el resto del ecosistema desde la raíz:
 
 ```bash
-# 1. Clonar y configurar
-cp .env.example .env
-
-# 2. Levantar contenedores
+# 1. Levantar contenedores
 docker compose up -d --build
 
-# 3. Instalar dependencias y configurar
-docker compose exec app composer install
-docker compose exec app php artisan key:generate
-docker compose exec app php artisan migrate --seed
+# 2. Instalar dependencias y configurar base de datos
+docker exec sims-backend composer install
+docker exec sims-backend php artisan key:generate
+docker exec sims-backend php artisan migrate:fresh --seed
 ```
+
+### Configuración de Red Interna
+- **Base de Datos:** El host configurado en `.env` debe ser `DB_HOST=db`.
+- **IoT Microservice:** Accesible internamente en `http://iot-server:8000`.
 
 ---
 
