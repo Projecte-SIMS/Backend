@@ -1,21 +1,19 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
+/**
+ * DEPRECATED: Esta migración ya no se usa.
+ * Los roles ahora son manejados por Spatie Permission (2026_01_26_181523_create_permission_tables.php)
+ */
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('roles', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->string('name');
-            $table->timestamps();
-        });
+        // No-op: Spatie Permission maneja los roles
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('roles');
+        // No-op
     }
 };

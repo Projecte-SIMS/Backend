@@ -25,7 +25,6 @@ class VehicleFactory extends Factory
             'model' => fake()->randomElement($models),
             'active' => false, // Available by default (active=false means not in use)
             'price_per_minute' => fake()->randomFloat(2, 0.10, 0.50),
-            'image_url' => null,
         ];
     }
 

@@ -58,16 +58,32 @@ class IoTControllerTest extends TestCase
         $this->clientToken = $this->clientUser->createToken('test')->plainTextToken;
     }
 
-    public function test_health_endpoint_is_public(): void
+    public function test_health_endpoint_requires_admin(): void
+    {
+        $response = $this->getJson('/api/admin/iot/health');
+
+        $response->assertStatus(401);
+    }
+
+    public function test_admin_can_access_health(): void
     {
         Http::fake([
             '*/health' => Http::response(['ok' => true], 200),
         ]);
 
-        $response = $this->getJson('/api/iot/health');
+        $response = $this->withHeader('Authorization', "Bearer {$this->adminToken}")
+                         ->getJson('/api/admin/iot/health');
 
         $response->assertStatus(200)
                  ->assertJson(['ok' => true]);
+    }
+
+    public function test_client_cannot_access_health(): void
+    {
+        $response = $this->withHeader('Authorization', "Bearer {$this->clientToken}")
+                         ->getJson('/api/admin/iot/health');
+
+        $response->assertStatus(403);
     }
 
     public function test_authenticated_user_can_list_iot_devices(): void
@@ -159,5 +175,77 @@ class IoTControllerTest extends TestCase
 
         $response->assertStatus(200)
                  ->assertJsonPath('online', true);
+    }
+
+    public function test_admin_can_send_custom_command(): void
+    {
+        Http::fake([
+            '*/api/command' => Http::response(['result' => 'sent'], 200),
+        ]);
+
+        $response = $this->withHeader('Authorization', "Bearer {$this->adminToken}")
+                         ->postJson('/api/admin/iot/devices/123/command', [
+                             'action' => 'on',
+                             'relay' => 0
+                         ]);
+
+        $response->assertStatus(200);
+    }
+
+    public function test_admin_can_get_unlinked_devices(): void
+    {
+        Http::fake([
+            '*/api/devices' => Http::response([
+                ['id' => '123', 'license_plate' => null, 'online' => true],
+                ['id' => '456', 'license_plate' => null, 'online' => false],
+            ], 200),
+        ]);
+
+        $response = $this->withHeader('Authorization', "Bearer {$this->adminToken}")
+                         ->getJson('/api/admin/iot/devices/unlinked');
+
+        $response->assertStatus(200);
+    }
+
+    public function test_admin_can_get_available_vehicles(): void
+    {
+        \App\Models\Vehicle::factory()->count(3)->create();
+
+        $response = $this->withHeader('Authorization', "Bearer {$this->adminToken}")
+                         ->getJson('/api/admin/iot/vehicles/available');
+
+        $response->assertStatus(200);
+    }
+
+    public function test_client_cannot_link_devices(): void
+    {
+        $response = $this->withHeader('Authorization', "Bearer {$this->clientToken}")
+                         ->postJson('/api/admin/iot/devices/123/link', [
+                             'vehicle_id' => 1
+                         ]);
+
+        $response->assertStatus(403);
+    }
+
+    public function test_admin_can_view_iot_logs(): void
+    {
+        Http::fake([
+            '*/api/logs*' => Http::response([
+                ['timestamp' => '2024-01-01T00:00:00Z', 'level' => 'info', 'message' => 'Test log']
+            ], 200),
+        ]);
+
+        $response = $this->withHeader('Authorization', "Bearer {$this->adminToken}")
+                         ->getJson('/api/admin/iot/logs');
+
+        $response->assertStatus(200);
+    }
+
+    public function test_client_cannot_view_iot_logs(): void
+    {
+        $response = $this->withHeader('Authorization', "Bearer {$this->clientToken}")
+                         ->getJson('/api/admin/iot/logs');
+
+        $response->assertStatus(403);
     }
 }

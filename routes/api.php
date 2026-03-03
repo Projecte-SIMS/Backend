@@ -66,10 +66,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('reservations/{reservation}/off', [ReservationController::class, 'turnOff']);
     Route::post('reservations/{reservation}/force-finish', [ReservationController::class, 'forceFinish']);
 
-    // IoT endpoints (dispositivos y comandos)
+    // IoT endpoints (lectura para usuarios autenticados)
     Route::prefix('iot')->group(function () {
-        Route::get('health', [IoTController::class, 'health']);
-        Route::get('logs', [IoTController::class, 'logs']);
         Route::get('devices', [IoTController::class, 'devices']);
         Route::get('devices/{deviceId}', [IoTController::class, 'device']);
         Route::get('devices/{deviceId}/ping', [IoTController::class, 'ping']);
@@ -104,6 +102,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('reservations/{id}', [AdminReservationController::class, 'update'])->name('reservations.update');
         Route::delete('reservations/{id}', [AdminReservationController::class, 'destroy'])->name('reservations.destroy');
         Route::post('reservations/{id}/force-finish', [AdminReservationController::class, 'forceFinish'])->name('reservations.forceFinish');
+        
+        // IoT Admin endpoints (solo admin)
+        Route::get('iot/health', [IoTController::class, 'health']);
+        Route::get('iot/logs', [IoTController::class, 'logs']);
         
         // IoT Commands (solo admin puede enviar comandos)
         Route::post('iot/devices/{deviceId}/on', [IoTController::class, 'turnOn']);

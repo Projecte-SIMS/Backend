@@ -187,4 +187,139 @@ class ReservationTest extends TestCase
 
         $response->assertStatus(409);
     }
+
+    public function test_client_can_activate_pending_reservation(): void
+    {
+        $vehicle = Vehicle::factory()->create(['active' => false]);
+        $reservation = Reservation::factory()->create([
+            'user_id' => $this->clientUser->id,
+            'vehicle_id' => $vehicle->id,
+            'status' => 'pending',
+            'activation_deadline' => Carbon::now()->addMinutes(10),
+        ]);
+
+        $response = $this->withHeader('Authorization', "Bearer {$this->clientToken}")
+                         ->postJson("/api/reservations/{$reservation->id}/activate");
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('reservations', [
+            'id' => $reservation->id,
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_client_cannot_activate_expired_reservation(): void
+    {
+        $vehicle = Vehicle::factory()->create(['active' => false]);
+        $reservation = Reservation::factory()->create([
+            'user_id' => $this->clientUser->id,
+            'vehicle_id' => $vehicle->id,
+            'status' => 'pending',
+            'activation_deadline' => Carbon::now()->subMinutes(5), // Expired
+        ]);
+
+        $response = $this->withHeader('Authorization', "Bearer {$this->clientToken}")
+                         ->postJson("/api/reservations/{$reservation->id}/activate");
+
+        $response->assertStatus(403);
+    }
+
+    public function test_client_cannot_have_multiple_active_reservations(): void
+    {
+        $vehicle1 = Vehicle::factory()->create(['active' => false]);
+        $vehicle2 = Vehicle::factory()->create(['active' => false]);
+        
+        // Create existing pending reservation
+        Reservation::factory()->create([
+            'user_id' => $this->clientUser->id,
+            'vehicle_id' => $vehicle1->id,
+            'status' => 'pending',
+            'activation_deadline' => Carbon::now()->addMinutes(10),
+        ]);
+
+        // Try to create another reservation
+        $response = $this->withHeader('Authorization', "Bearer {$this->clientToken}")
+                         ->postJson('/api/reservations', [
+                             'vehicle_id' => $vehicle2->id,
+                             'scheduled_start' => Carbon::now()->addHour()->toIso8601String(),
+                         ]);
+
+        $response->assertStatus(422);
+    }
+
+    public function test_client_cannot_finish_inactive_reservation(): void
+    {
+        $vehicle = Vehicle::factory()->create();
+        $reservation = Reservation::factory()->create([
+            'user_id' => $this->clientUser->id,
+            'vehicle_id' => $vehicle->id,
+            'status' => 'pending',
+        ]);
+
+        $response = $this->withHeader('Authorization', "Bearer {$this->clientToken}")
+                         ->postJson("/api/reservations/{$reservation->id}/finish");
+
+        $response->assertStatus(400);
+    }
+
+    public function test_client_cannot_activate_other_user_reservation(): void
+    {
+        $otherUser = User::factory()->create();
+        $vehicle = Vehicle::factory()->create(['active' => false]);
+        $reservation = Reservation::factory()->create([
+            'user_id' => $otherUser->id,
+            'vehicle_id' => $vehicle->id,
+            'status' => 'pending',
+            'activation_deadline' => Carbon::now()->addMinutes(10),
+        ]);
+
+        $response = $this->withHeader('Authorization', "Bearer {$this->clientToken}")
+                         ->postJson("/api/reservations/{$reservation->id}/activate");
+
+        $response->assertStatus(403);
+    }
+
+    public function test_admin_can_force_finish_reservation(): void
+    {
+        $vehicle = Vehicle::factory()->create(['price_per_minute' => 0.20]);
+        $reservation = Reservation::factory()->active()->create([
+            'vehicle_id' => $vehicle->id,
+        ]);
+
+        // Create trip for the reservation
+        \App\Models\Trip::create([
+            'reservation_id' => $reservation->id,
+            'engine_started_at' => Carbon::now()->subMinutes(30),
+        ]);
+
+        $response = $this->withHeader('Authorization', "Bearer {$this->adminToken}")
+                         ->postJson("/api/admin/reservations/{$reservation->id}/force-finish");
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('reservations', [
+            'id' => $reservation->id,
+            'status' => 'completed',
+        ]);
+    }
+
+    public function test_admin_can_force_finish_with_custom_amount(): void
+    {
+        $vehicle = Vehicle::factory()->create();
+        $reservation = Reservation::factory()->active()->create([
+            'vehicle_id' => $vehicle->id,
+        ]);
+
+        \App\Models\Trip::create([
+            'reservation_id' => $reservation->id,
+            'engine_started_at' => Carbon::now()->subMinutes(30),
+        ]);
+
+        $response = $this->withHeader('Authorization', "Bearer {$this->adminToken}")
+                         ->postJson("/api/admin/reservations/{$reservation->id}/force-finish", [
+                             'custom_amount' => 5.00
+                         ]);
+
+        $response->assertStatus(200)
+                 ->assertJsonFragment(['cost' => '5€']);
+    }
 }

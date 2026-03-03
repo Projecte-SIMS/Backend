@@ -13,6 +13,8 @@ return new class extends Migration {
             $table->string('brand')->nullable();
             $table->string('model')->nullable();
             $table->boolean('active')->default(true);
+            $table->decimal('price_per_minute', 8, 2)->default(0.15);
+            $table->softDeletes();
             $table->timestamps();
         });
     }

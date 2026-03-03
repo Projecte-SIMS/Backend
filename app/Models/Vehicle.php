@@ -17,7 +17,6 @@ class Vehicle extends Model
         'model',
         'active',
         'price_per_minute',
-        'image_url',
     ];
 
     protected $casts = [

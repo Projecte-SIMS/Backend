@@ -67,8 +67,6 @@ Requieren una cabecera `Authorization: Bearer {token}` válida.
 ### 2.6. Dispositivos IoT (Lectura)
 | Método | Endpoint | Acción | Descripción |
 | :--- | :--- | :--- | :--- |
-| GET | `/api/iot/health` | IoTController@health | Verifica el estado del microservicio IoT. |
-| GET | `/api/iot/logs` | IoTController@logs | Lista logs de comandos IoT enviados. |
 | GET | `/api/iot/devices` | IoTController@devices | Lista todos los dispositivos IoT conectados. |
 | GET | `/api/iot/devices/{deviceId}` | IoTController@device | Detalle de un dispositivo específico. |
 | GET | `/api/iot/devices/{deviceId}/ping` | IoTController@ping | Verifica si un dispositivo está online. |
@@ -134,6 +132,8 @@ Requieren autenticación y pertenecer al rol de administrador. Se encuentran baj
 ### 3.6. Control IoT (Admin)
 | Método | Endpoint | Acción | Descripción |
 | :--- | :--- | :--- | :--- |
+| GET | `/api/admin/iot/health` | IoTController@health | Verifica el estado del microservicio IoT. |
+| GET | `/api/admin/iot/logs` | IoTController@logs | Lista logs de comandos IoT enviados. |
 | POST | `/api/admin/iot/devices/{deviceId}/on` | IoTController@turnOn | Enciende un vehículo remotamente. |
 | POST | `/api/admin/iot/devices/{deviceId}/off` | IoTController@turnOff | Apaga un vehículo remotamente. |
 | POST | `/api/admin/iot/devices/{deviceId}/command` | IoTController@sendCommand | Envía comando genérico (on/off/reboot). |

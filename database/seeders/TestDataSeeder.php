@@ -12,79 +12,129 @@ use Carbon\Carbon;
 class TestDataSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Seed test data for vehicles, tickets and reservations.
+     * Vehicles match MongoVehicleLocationsSeeder (Terres de l'Ebre).
+     * All vehicles start as available (active = false).
      */
     public function run(): void
     {
-        // Get existing users (created by DatabaseSeeder)
-        // ID 1 = Admin, ID 2 = Client, ID 3 = Maintenance
         $admin = User::find(1);      // Admin
         $client = User::find(2);     // Client
         $maint = User::find(3);      // Maintenance
 
-        // Create vehicles that match MongoVehicleLocationsSeeder (use updateOrCreate to avoid duplicates)
-        $vehicle1 = Vehicle::updateOrCreate(
-            ['license_plate' => 'ABC123'],
-            ['brand' => 'Toyota', 'model' => 'Yaris', 'active' => true]
+        // === VEHICLES (Terres de l'Ebre) ===
+        // All vehicles start as available (active = false)
+        // Must match license_plates in MongoVehicleLocationsSeeder
+        
+        // Ulldecona - Centro
+        Vehicle::updateOrCreate(
+            ['license_plate' => '1234ABC'],
+            ['brand' => 'Toyota', 'model' => 'Yaris', 'active' => false]
         );
 
-        $vehicle2 = Vehicle::updateOrCreate(
-            ['license_plate' => 'DEF456'],
+        // Ulldecona - Zona Norte
+        Vehicle::updateOrCreate(
+            ['license_plate' => '5678DEF'],
+            ['brand' => 'Seat', 'model' => 'Ibiza', 'active' => false]
+        );
+
+        // Amposta - Centro
+        Vehicle::updateOrCreate(
+            ['license_plate' => '9012GHI'],
+            ['brand' => 'Renault', 'model' => 'Clio', 'active' => false]
+        );
+
+        // Amposta - Zona Puerto
+        Vehicle::updateOrCreate(
+            ['license_plate' => '3456JKL'],
             ['brand' => 'Ford', 'model' => 'Fiesta', 'active' => false]
         );
 
-        $vehicle3 = Vehicle::updateOrCreate(
-            ['license_plate' => 'GHI789'],
-            ['brand' => 'Nissan', 'model' => 'March', 'active' => true]
+        // Sant Carles de la Ràpita
+        Vehicle::updateOrCreate(
+            ['license_plate' => '7890MNO'],
+            ['brand' => 'Volkswagen', 'model' => 'Polo', 'active' => false]
         );
 
-        // Create test tickets
-        Ticket::create([
-            'user_id' => $client->id,
-            'title' => 'Ticket de cliente 1',
-            'description' => 'Problema con el vehículo',
-            'active' => true,
-        ]);
+        // Tortosa - Centro
+        Vehicle::updateOrCreate(
+            ['license_plate' => '2345PQR'],
+            ['brand' => 'Peugeot', 'model' => '208', 'active' => false]
+        );
 
-        Ticket::create([
-            'user_id' => $client->id,
-            'title' => 'Ticket de cliente 2',
-            'description' => 'Solicitud de servicio',
-            'active' => true,
-        ]);
+        // Alcanar
+        Vehicle::updateOrCreate(
+            ['license_plate' => '6789STU'],
+            ['brand' => 'Citroën', 'model' => 'C3', 'active' => false]
+        );
 
-        Ticket::create([
-            'user_id' => $admin->id,
-            'title' => 'Ticket del admin',
-            'description' => 'Mantenimiento',
-            'active' => true,
-        ]);
+        // La Sénia
+        Vehicle::updateOrCreate(
+            ['license_plate' => '0123VWX'],
+            ['brand' => 'Opel', 'model' => 'Corsa', 'active' => false]
+        );
 
-        // Create test reservations
-        Reservation::create([
-            'user_id' => $client->id,
-            'vehicle_id' => $vehicle1->id,
-            'scheduled_start' => Carbon::now()->addHours(2),
-            'activation_deadline' => Carbon::now()->addHours(2)->addMinutes(20),
-            'status' => 'pending',
-        ]);
+        // === TICKETS (examples) ===
+        Ticket::updateOrCreate(
+            ['title' => 'Consulta sobre reservas'],
+            [
+                'user_id' => $client->id,
+                'description' => '¿Cómo puedo modificar una reserva existente?',
+                'active' => true,
+            ]
+        );
 
-        Reservation::create([
-            'user_id' => $client->id,
-            'vehicle_id' => $vehicle2->id,
-            'scheduled_start' => Carbon::now()->addDays(1),
-            'activation_deadline' => Carbon::now()->addDays(1)->addMinutes(20),
-            'status' => 'active',
-        ]);
+        Ticket::updateOrCreate(
+            ['title' => 'Problema con la aplicación'],
+            [
+                'user_id' => $client->id,
+                'description' => 'La aplicación no carga correctamente en mi dispositivo',
+                'active' => true,
+            ]
+        );
 
-        Reservation::create([
-            'user_id' => $admin->id,
-            'vehicle_id' => $vehicle3->id,
-            'scheduled_start' => Carbon::now()->subHours(5),
-            'activation_deadline' => Carbon::now()->subHours(5)->addMinutes(20),
-            'status' => 'completed',
-        ]);
+        Ticket::updateOrCreate(
+            ['title' => 'Sugerencia de mejora'],
+            [
+                'user_id' => $admin->id,
+                'description' => 'Sería útil poder ver el historial de reservas por vehículo',
+                'active' => false,
+            ]
+        );
 
-        echo "✅ Test data created!\n";
+        // === NO ACTIVE RESERVATIONS ===
+        // All vehicles start available, only historical completed reservations
+        
+        // Historical reservation 1 (completed)
+        Reservation::updateOrCreate(
+            ['user_id' => $client->id, 'vehicle_id' => 1, 'status' => 'completed'],
+            [
+                'scheduled_start' => Carbon::now()->subDays(5),
+                'activation_deadline' => Carbon::now()->subDays(5)->addMinutes(20),
+            ]
+        );
+
+        // Historical reservation 2 (completed)
+        Reservation::updateOrCreate(
+            ['user_id' => $admin->id, 'vehicle_id' => 3, 'status' => 'completed'],
+            [
+                'scheduled_start' => Carbon::now()->subDays(3),
+                'activation_deadline' => Carbon::now()->subDays(3)->addMinutes(20),
+            ]
+        );
+
+        // Historical reservation 3 (cancelled)
+        Reservation::updateOrCreate(
+            ['user_id' => $maint->id, 'vehicle_id' => 5, 'status' => 'cancelled'],
+            [
+                'scheduled_start' => Carbon::now()->subDays(2),
+                'activation_deadline' => Carbon::now()->subDays(2)->addMinutes(20),
+            ]
+        );
+
+        echo "✅ Test data created (Terres de l'Ebre)!\n";
+        echo "   8 vehicles (all available)\n";
+        echo "   3 tickets\n";
+        echo "   3 historical reservations (no active)\n";
     }
 }

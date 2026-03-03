@@ -5,8 +5,6 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Database\Seeders\PermissionsSeeder;
-use Database\Seeders\RolesSeeder;
 use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
@@ -15,22 +13,23 @@ class DatabaseSeeder extends Seeder
 
     /**
      * Seed the application's database.
+     * Order: Permissions -> Roles -> Users -> Test Data -> MongoDB
      */
     public function run(): void
     {
-        // 1. Cargar Permisos y Roles primero
+        // 1. Cargar Permisos y Roles
         $this->call([
             PermissionsSeeder::class,
             RolesSeeder::class,
         ]);
 
-        $password = Hash::make('password'); // Contraseña común para test
+        $password = Hash::make('password');
 
-        // 2. Crear ADMIN (El Jefe)
+        // 2. Crear ADMIN
         $admin = User::firstOrCreate(
-            ['email' => 'admin@test.com'], // Cambiado a test.com para uniformidad
+            ['email' => 'admin@sims.com'],
             [
-                'name' => 'Super Admin',
+                'name' => 'Administrador',
                 'username' => 'admin',
                 'password' => $password,
                 'active' => true,
@@ -38,11 +37,11 @@ class DatabaseSeeder extends Seeder
         );
         $admin->assignRole('Admin');
 
-        // 3. Crear CLIENTE (El usuario estándar)
+        // 3. Crear CLIENTE
         $client = User::firstOrCreate(
-            ['email' => 'client@test.com'],
+            ['email' => 'client@sims.com'],
             [
-                'name' => 'Cliente de Prueba',
+                'name' => 'Cliente Demo',
                 'username' => 'client',
                 'password' => $password,
                 'active' => true,
@@ -50,9 +49,9 @@ class DatabaseSeeder extends Seeder
         );
         $client->assignRole('Client');
 
-        // 4. Crear MANTENIMIENTO (El técnico)
+        // 4. Crear MANTENIMIENTO
         $maintenance = User::firstOrCreate(
-            ['email' => 'maint@test.com'],
+            ['email' => 'maint@sims.com'],
             [
                 'name' => 'Técnico Mantenimiento',
                 'username' => 'maintenance',
@@ -62,9 +61,18 @@ class DatabaseSeeder extends Seeder
         );
         $maintenance->assignRole('Maintenance');
 
-        // 5. Crear datos de prueba
+        // 5. Crear datos de prueba (MySQL)
         $this->call([
             TestDataSeeder::class,
         ]);
+
+        // 6. Crear ubicaciones de vehículos (MongoDB)
+        $this->call([
+            MongoVehicleLocationsSeeder::class,
+        ]);
+
+        echo "\n🚀 SIMS Database seeded successfully!\n";
+        echo "📧 Users: admin@sims.com, client@sims.com, maint@sims.com\n";
+        echo "🔑 Password: password\n";
     }
 }

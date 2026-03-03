@@ -6,14 +6,20 @@ use Illuminate\Database\Seeder;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 
+/**
+ * Seeder para asegurar que existe un usuario admin específico.
+ * Útil para crear admins adicionales sin resetear la base de datos.
+ * 
+ * Uso: php artisan db:seed --class=EnsureJordiAdminSeeder
+ */
 class EnsureJordiAdminSeeder extends Seeder
 {
     public function run()
     {
-        $role = Role::firstOrCreate(['name' => 'Admin']);
+        $role = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
 
         $user = User::firstOrCreate(
-            ['email' => 'jordi@jordi.com'],
+            ['email' => 'jordi@sims.com'],
             [
                 'name' => 'Jordi',
                 'username' => 'jordi',
@@ -29,6 +35,6 @@ class EnsureJordiAdminSeeder extends Seeder
         $user->active = true;
         $user->save();
 
-        echo "Ensured admin user jordi@jordi.com\n";
+        echo "✅ Admin user jordi@sims.com ensured\n";
     }
 }
