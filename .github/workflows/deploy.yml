@@ -1,0 +1,15 @@
+name: Deploy Backend to Render
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'project-sims-backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Deploy via Render Webhook
+        run: |
+          curl -X POST ${{ secrets.RENDER_BACKEND_WEBHOOK_URL }}

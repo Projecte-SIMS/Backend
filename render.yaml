@@ -1,0 +1,44 @@
+services:
+  - type: web
+    name: sims-backend-api
+    env: docker
+    dockerContext: .
+    plan: free # Capa gratuita de Render
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_KEY
+        fromContext: secret
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromService:
+          name: sims-db
+          type: postgres
+          property: host
+      - key: DB_PORT
+        fromService:
+          name: sims-db
+          type: postgres
+          property: port
+      - key: DB_DATABASE
+        fromService:
+          name: sims-db
+          type: postgres
+          property: database
+      - key: DB_USERNAME
+        fromService:
+          name: sims-db
+          type: postgres
+          property: user
+      - key: DB_PASSWORD
+        fromService:
+          name: sims-db
+          type: postgres
+          property: password
+
+databases:
+  - name: sims-db
+    plan: free
+    databaseName: project_sims_landlord
+    user: admin_sims
