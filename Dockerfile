@@ -17,11 +17,15 @@ WORKDIR /var/www/html
 # Copy application code
 COPY . /var/www/html
 
+# Copy entrypoint script and set permissions
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Install composer dependencies if composer.json exists
 RUN if [ -f /var/www/html/composer.json ]; then composer install --prefer-dist --no-interaction --optimize-autoloader; fi || true
 
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache || true
 
-EXPOSE 9000
+EXPOSE 8000
 
-CMD ["php-fpm"]
+ENTRYPOINT ["docker-entrypoint.sh"]
