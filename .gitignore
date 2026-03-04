@@ -54,6 +54,10 @@ docker-compose.override.yml
 /test_*.php
 /test_*.ps1
 /check_*.php
+/get_fresh_tokens.php
+/routes.txt
+/audit_permissions_refactored.php
+.venv/
 /.idea
 /.nova
 /.phpunit.cache
