@@ -12,7 +12,11 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => [
+        'https://frontend-nine-orcin-waqisje40z.vercel.app',
+        'http://localhost:5173', // Para que te siga funcionando en local (Vite)
+        'http://localhost:3000'
+    ],
 
     'allowed_origins_patterns' => [],
 
