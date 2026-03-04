@@ -17,15 +17,13 @@ WORKDIR /var/www/html
 # Copy application code
 COPY . /var/www/html
 
-# Copy entrypoint script and set permissions
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
 # Install composer dependencies if composer.json exists
 RUN if [ -f /var/www/html/composer.json ]; then composer install --prefer-dist --no-interaction --optimize-autoloader; fi || true
 
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache || true
 
+# Exponemos el puerto 8000 por defecto
 EXPOSE 8000
 
-ENTRYPOINT ["docker-entrypoint.sh"]
+# Comando final: Migramos y arrancamos el servidor HTTP
+CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
