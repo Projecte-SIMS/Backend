@@ -19,5 +19,5 @@ services:
 databases:
   - name: sims-db
     plan: free
-    databaseName: project_sims_landlord
+    databaseName: project_sims_backend
     user: admin_sims
