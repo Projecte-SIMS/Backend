@@ -77,6 +77,15 @@ class CreateTenant extends Command
             ]);
 
             $this->info(Artisan::output());
+
+            // 4. Ejecutar Seeders (Opcional, pero recomendado para datos iniciales)
+            $this->info("⚙️ Ejecutando seeders para el tenant...");
+            Artisan::call('db:seed', [
+                '--database' => 'tenant',
+                '--force' => true,
+            ]);
+            $this->info(Artisan::output());
+
             $this->info("🎉 Tenant '{$id}' creado con éxito en PostgreSQL. Acceso: {$domain}");
 
         } catch (\Exception $e) {
