@@ -78,6 +78,7 @@ class VehicleController extends Controller
             $vehicle->setAttribute('mongo_active', $isOccupied);
             $vehicle->setAttribute('status', $status);
             $vehicle->setAttribute('is_mine', $isMine);
+            $vehicle->setAttribute('iot_device_id', $location['device_id'] ?? null);
             
             return $vehicle;
         });
@@ -118,6 +119,18 @@ class VehicleController extends Controller
     public function show(Vehicle $vehicle): JsonResponse
     {
         $this->authorize('view', $vehicle);
+
+        // Intentar obtener información de IoT basada en la matrícula
+        $locations = $this->locationService->getLocations();
+        $location = $locations[$vehicle->license_plate] ?? null;
+
+        if ($location) {
+            $vehicle->setAttribute('iot_device_id', $location['device_id'] ?? null);
+            $vehicle->setAttribute('online', (bool) ($location['online'] ?? false));
+            $vehicle->setAttribute('mongo_active', (bool) ($location['active'] ?? false));
+            $vehicle->setAttribute('latitude', (float) ($location['latitude'] ?? null));
+            $vehicle->setAttribute('longitude', (float) ($location['longitude'] ?? null));
+        }
 
         return response()->json([
             'data' => $vehicle,

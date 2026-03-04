@@ -76,36 +76,32 @@ project-sims-backend/
 
 ---
 
-## Estado Actual del Backend
+## Estado Actual del Backend (Sprint 5)
 
 ### ✅ Completado
 
-| Funcionalidad | Estado |
-|---------------|--------|
-| API REST completa (60+ endpoints) | ✅ |
-| Autenticación con Laravel Sanctum | ✅ |
-| Registro público de usuarios | ✅ |
-| Sistema RBAC con Spatie Permission | ✅ |
-| 3 roles (Admin, Client, Maintenance) | ✅ |
-| 15 permisos atómicos | ✅ |
-| CRUD completo de Users, Vehicles, Reservations, Tickets | ✅ |
-| Control de vehículos IoT (on/off) | ✅ |
-| Vinculación dispositivos IoT-Vehículos | ✅ |
-| Logs de comandos IoT (CommandLog) | ✅ |
-| Chatbot con contexto por rol | ✅ |
-| Rate limiting (login, chatbot) | ✅ |
-| Middleware admin centralizado | ✅ |
-| Tests automatizados (51+ tests) | ✅ |
-| Documentación técnica | ✅ |
+| Funcionalidad | Estado | Detalles |
+|---------------|--------|----------|
+| API REST completa (70+ endpoints) | ✅ | Documentada y probada. |
+| Autenticación Sanctum | ✅ | Tokens seguros y RBAC. |
+| Gestión de Usuarios y Roles | ✅ | Admin, Client, Maintenance. |
+| CRUD Vehículos y Reservas | ✅ | Lógica de negocio completa. |
+| Sistema de Tickets y Soporte | ✅ | Comunicación usuario-admin. |
+| **Integración IoT Completa** | ✅ | **Nuevo:** Vinculación dinámica de dispositivos y vehículos. |
+| Telemetría en Tiempo Real | ✅ | GPS, Batería, RPM, Temperatura. |
+| Control Remoto de Vehículos | ✅ | Encendido/Apagado y Reinicio de hardware. |
+| Logs de Auditoría IoT | ✅ | Registro de todos los comandos enviados. |
+| Chatbot IA | ✅ | Asistente inteligente integrado. |
+| Tests Automatizados | ✅ | Cobertura amplia (Feature/Unit). |
+| Docker Multi-Arch | ✅ | Soporte nativo para AMD64 y ARM64 (Apple Silicon). |
 
-### ⚠️ Pendiente / Mejoras
+### ⚠️ Próximos Pasos (Roadmap)
 
 | Tarea | Prioridad |
 |-------|-----------|
-| Laravel Telescope (debugging) | Media |
-| Sentry (tracking de errores) | Media |
-| OpenAPI/Swagger | Baja |
-| Tests de integración adicionales | Baja |
+| Implementación de WebSockets nativos en Laravel (Reverb) | Media |
+| Dashboard de Analítica Avanzada (Grafana/Kibana) | Baja |
+| Notificaciones Push (Firebase/OneSignal) | Baja |
 
 ---
 
