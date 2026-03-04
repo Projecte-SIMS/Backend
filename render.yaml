@@ -8,13 +8,12 @@ services:
       - key: APP_ENV
         value: production
       - key: APP_KEY
-        generateValue: true # Render generará una clave automáticamente
+        sync: false
       - key: DB_CONNECTION
         value: pgsql
-      - key: DB_URL # Laravel usará esta URL que contiene host, puerto, db, usuario y password
-        fromService:
+      - key: DB_URL
+        fromDatabase:
           name: sims-db
-          type: psql
           property: connectionString
 
 databases:
