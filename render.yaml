@@ -15,6 +15,12 @@ services:
         fromDatabase:
           name: sims-db
           property: connectionString
+      - key: OPEN_WEBUI_API_KEY
+        sync: false
+      - key: OPEN_WEBUI_BASE_URL
+        value: https://api-ia.daw2.iesmontsia.org:3000/api
+      - key: OPEN_WEBUI_MODEL
+        value: llm-per-a-alumnat
 
 databases:
   - name: sims-db
