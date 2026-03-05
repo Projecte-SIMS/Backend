@@ -35,4 +35,17 @@ return [
         ],
     ],
 
+    // Integración con el Microservicio IoT (FastAPI)
+    'iot' => [
+        'url' => env('IOT_MICROSERVICE_URL', 'http://localhost:8001'),
+        'api_key' => env('IOT_API_KEY', 'MACMECMIC'),
+    ],
+
+    // Integración con el Chatbot de IA (Open WebUI)
+    'open_webui' => [
+        'api_key' => env('OPEN_WEBUI_API_KEY'),
+        'base_url' => env('OPEN_WEBUI_BASE_URL', 'https://api-ia.daw2.iesmontsia.org:3000/api'),
+        'model' => env('OPEN_WEBUI_MODEL', 'llm-per-a-alumnat'),
+    ],
+
 ];
