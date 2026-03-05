@@ -39,7 +39,7 @@
             <div class="flex items-center gap-6">
                 <a href="#caracteristicas" class="hidden sm:block text-sm font-medium text-gray-400 hover:text-white transition-colors">Características</a>
                 <a href="#video" class="hidden sm:block text-sm font-medium text-gray-400 hover:text-white transition-colors">Demo</a>
-                <a href="http://localhost:5173/map" class="hidden sm:block text-sm font-medium text-gray-400 hover:text-white transition-colors">Mapa</a>
+                <a href="https://frontend-nine-orcin-waqisje40z.vercel.app/map" class="hidden sm:block text-sm font-medium text-gray-400 hover:text-white transition-colors">Mapa</a>
                 <a href="https://frontend-nine-orcin-waqisje40z.vercel.app/login" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-2xl text-sm font-bold uppercase tracking-widest transition-all shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50">
                     Acceder
                 </a>
@@ -76,10 +76,10 @@
                         </p>
                         
                         <div class="mt-10 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                            <a href="http://localhost:5173/login" class="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 active:scale-95">
+                            <a href="https://frontend-nine-orcin-waqisje40z.vercel.app/login" class="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 active:scale-95">
                                 Iniciar Sesión
                             </a>
-                            <a href="http://localhost:5173/map" class="inline-flex items-center gap-2 text-gray-400 hover:text-white font-medium transition-colors">
+                            <a href="https://frontend-nine-orcin-waqisje40z.vercel.app/map" class="inline-flex items-center gap-2 text-gray-400 hover:text-white font-medium transition-colors">
                                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                                 </svg>
@@ -279,10 +279,10 @@
                             Accede a la plataforma y descubre una nueva forma de gestionar la movilidad sostenible.
                         </p>
                         <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <a href="http://localhost:5173/login" class="inline-flex items-center justify-center gap-2 bg-white hover:bg-gray-100 text-indigo-700 px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all shadow-xl active:scale-95">
+                            <a href="https://frontend-nine-orcin-waqisje40z.vercel.app/login" class="inline-flex items-center justify-center gap-2 bg-white hover:bg-gray-100 text-indigo-700 px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all shadow-xl active:scale-95">
                                 Acceder ahora
                             </a>
-                            <a href="http://localhost:5173/register" class="inline-flex items-center gap-2 text-white hover:text-indigo-100 font-bold transition-colors">
+                            <a href="https://frontend-nine-orcin-waqisje40z.vercel.app/register" class="inline-flex items-center gap-2 text-white hover:text-indigo-100 font-bold transition-colors">
                                 Crear cuenta gratuita
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
