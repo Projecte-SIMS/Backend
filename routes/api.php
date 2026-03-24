@@ -114,6 +114,9 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // IoT Device Linking (vincular dispositivos a vehículos)
         Route::post('iot/devices/{deviceId}/link', [IoTController::class, 'linkToVehicle']);
+        Route::post('iot/devices/{deviceId}/unlink', [IoTController::class, 'unlinkDevice']);
+        Route::delete('iot/devices/{deviceId}', [IoTController::class, 'destroy']);
+        Route::post('iot/devices/{deviceId}/create-vehicle', [IoTController::class, 'createVehicleAndLink']);
         Route::get('iot/devices/unlinked', [IoTController::class, 'unlinkedDevices']);
         Route::get('iot/vehicles/available', [IoTController::class, 'availableVehicles']);
     });
