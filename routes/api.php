@@ -106,6 +106,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // IoT Admin endpoints (solo admin)
         Route::get('iot/health', [IoTController::class, 'health']);
         Route::get('iot/logs', [IoTController::class, 'logs']);
+        Route::get('iot/devices', [IoTController::class, 'devices']);
         
         // IoT Commands (solo admin puede enviar comandos)
         Route::post('iot/devices/{deviceId}/on', [IoTController::class, 'turnOn']);
