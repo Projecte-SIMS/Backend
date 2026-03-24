@@ -76,6 +76,7 @@ class VehicleController extends Controller
             $vehicle->setAttribute('latitude', isset($location['latitude']) ? (float)$location['latitude'] : null);
             $vehicle->setAttribute('longitude', isset($location['longitude']) ? (float)$location['longitude'] : null);
             $vehicle->setAttribute('mongo_active', $isOccupied);
+            $vehicle->setAttribute('online', (bool) ($location['online'] ?? false));
             $vehicle->setAttribute('status', $status);
             $vehicle->setAttribute('is_mine', $isMine);
             $vehicle->setAttribute('iot_device_id', $location['device_id'] ?? null);
@@ -84,12 +85,15 @@ class VehicleController extends Controller
         });
 
         if (!$shouldShowAll) {
-            // Para clientes: Solo disponibles O el mío reservado, Y QUE TENGAN RELACIÓN EN MONGO
+            // Para clientes: Solo disponibles O el mío reservado, Y QUE TENGAN RELACIÓN EN MONGO (y estén ONLINE)
             $filtered = $vehicles->getCollection()->filter(function ($v) {
-                $hasMongoRelation = $v->latitude !== null && $v->longitude !== null;
+                // Consideramos que tiene relación válida si tiene coordenadas distintas de 0 y está online
+                $hasValidLocation = $v->latitude !== null && $v->longitude !== null && 
+                                   ($v->latitude != 0 || $v->longitude != 0);
+                $isOnline = $v->online === true;
                 $isAvailable = $v->status === 'available' || ($v->status === 'reserved' && $v->is_mine);
                 
-                return $hasMongoRelation && $isAvailable;
+                return $hasValidLocation && $isOnline && $isAvailable;
             })->values();
             
             $vehicles->setCollection($filtered);
@@ -212,19 +216,24 @@ class VehicleController extends Controller
                 'longitude' => isset($location['longitude']) ? (float)$location['longitude'] : null,
                 'postgres_active' => $reservation ? true : false, // Reservado en Postgres
                 'mongo_active' => $isOccupied, // En marcha en Mongo
+                'online' => (bool) ($location['online'] ?? false),
+                'iot_device_id' => $location['device_id'] ?? null,
                 'is_mine' => $isReservedByMe,
                 'status' => $isOccupied ? 'running' : ($isPending ? 'reserved' : 'available'),
-                'available' => !$isReservedByOthers && !$isOccupied
+                'available' => !$isReservedByOthers && !$isOccupied && (bool) ($location['online'] ?? false)
             ];
         })
         // Filtro para el mapa de cliente:
-        // 1. Mostrar vehículos LIBRES para todos.
-        // 2. Mostrar vehículos RESERVADOS solo si son del usuario actual.
+        // 1. Mostrar vehículos LIBRES para todos (solo si están online).
+        // 2. Mostrar vehículos RESERVADOS solo si son del usuario actual (solo si están online).
         // 3. OCULTAR vehículos en marcha (running) para todos.
         ->filter(function($v) {
-            return $v['latitude'] !== null && 
-                   $v['longitude'] !== null && 
-                   ($v['status'] === 'available' || ($v['status'] === 'reserved' && $v['is_mine']));
+            $hasLocation = $v['latitude'] !== null && $v['longitude'] !== null && 
+                          ($v['latitude'] != 0 || $v['longitude'] != 0);
+            $isOnline = $v['online'] === true;
+            $isCorrectStatus = ($v['status'] === 'available' || ($v['status'] === 'reserved' && $v['is_mine']));
+            
+            return $hasLocation && $isOnline && $isCorrectStatus;
         })->values();
 
         return response()->json($result);
@@ -286,6 +295,7 @@ class VehicleController extends Controller
 
         $result = $vehicles->map(function ($vehicle) use ($locations) {
             $location = $locations[$vehicle->license_plate] ?? null;
+            $online = (bool) ($location['online'] ?? false);
 
             return [
                 'id' => $vehicle->id,
@@ -294,10 +304,15 @@ class VehicleController extends Controller
                 'model' => $vehicle->model,
                 'latitude' => isset($location['latitude']) ? (float)$location['latitude'] : null,
                 'longitude' => isset($location['longitude']) ? (float)$location['longitude'] : null,
-                'available' => true,
+                'online' => $online,
+                'available' => $online,
             ];
         })
-        ->filter(fn($v) => $v['latitude'] !== null && $v['longitude'] !== null)
+        ->filter(function($v) {
+            $hasLocation = $v['latitude'] !== null && $v['longitude'] !== null && 
+                          ($v['latitude'] != 0 || $v['longitude'] != 0);
+            return $hasLocation && $v['online'] === true;
+        })
         ->values();
 
         return response()->json($result);

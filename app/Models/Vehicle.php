@@ -31,7 +31,9 @@ class Vehicle extends Model
 
     public function isAvailable(): bool
     {
-        return $this->active && $this->reservations()
+        // En este proyecto, active = false significa disponible/libre
+        // y active = true significa ocupado/en uso.
+        return !$this->active && $this->reservations()
             ->whereIn('status', ['pending', 'active'])
             ->doesntExist();
     }
