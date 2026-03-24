@@ -323,4 +323,23 @@ class VehicleLocationService
             ];
         }
     }
+
+    /**
+     * Elimina un dispositivo del microservicio IoT.
+     */
+    public function deleteDevice(string $deviceId): bool
+    {
+        try {
+            $response = Http::timeout($this->timeout)
+                ->delete("{$this->baseUrl}/api/devices/{$deviceId}");
+
+            return $response->successful();
+        } catch (\Exception $e) {
+            Log::error('IoT: Failed to delete device', [
+                'device_id' => $deviceId,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
 }

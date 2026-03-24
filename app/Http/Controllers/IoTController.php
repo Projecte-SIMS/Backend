@@ -23,11 +23,105 @@ class IoTController extends Controller
 
     /**
      * Lista todos los dispositivos IoT con su estado.
+     * Cruza datos con PostgreSQL para ver si el vehículo existe.
      */
     public function devices(): JsonResponse
     {
         $devices = $this->iotService->getAllDevices();
-        return response()->json($devices);
+        
+        // Obtener todas las matrículas registradas en Postgres
+        $existingPlates = Vehicle::pluck('license_plate')->toArray();
+
+        $result = array_map(function($d) use ($existingPlates) {
+            $plate = $d['license_plate'] ?? '';
+            $d['vehicle_exists'] = in_array($plate, $existingPlates);
+            $d['is_orphan'] = !empty($plate) && !str_starts_with($plate, 'AUTO-') && !$d['vehicle_exists'];
+            
+            if ($d['vehicle_exists']) {
+                $vehicle = Vehicle::where('license_plate', $plate)->first();
+                $d['vehicle_id'] = $vehicle?->id;
+                $d['vehicle_name'] = "{$vehicle?->brand} {$vehicle?->model}";
+            }
+
+            return $d;
+        }, $devices);
+
+        return response()->json($result);
+    }
+
+    /**
+     * Desvincula un dispositivo de su vehículo actual.
+     * Le asigna una matrícula temporal "AUTO-UNLINKED".
+     */
+    public function unlinkDevice(string $deviceId): JsonResponse
+    {
+        $result = $this->iotService->updateDevicePlate($deviceId, "AUTO-" . strtoupper(substr(uniqid(), -6)));
+
+        if (!$result['success']) {
+            return response()->json([
+                'message' => 'Failed to unlink device',
+                'error' => $result['error'] ?? 'Unknown error'
+            ], 500);
+        }
+
+        return response()->json([
+            'message' => 'Device unlinked successfully',
+            'result' => $result['result']
+        ]);
+    }
+
+    /**
+     * Elimina físicamente un dispositivo del microservicio.
+     */
+    public function destroy(string $deviceId): JsonResponse
+    {
+        $success = $this->iotService->deleteDevice($deviceId);
+
+        if (!$success) {
+            return response()->json([
+                'message' => 'Failed to delete device'
+            ], 500);
+        }
+
+        return response()->json([
+            'message' => 'Device deleted successfully'
+        ]);
+    }
+
+    /**
+     * Crea un nuevo vehículo y vincula el dispositivo automáticamente.
+     */
+    public function createVehicleAndLink(Request $request, string $deviceId): JsonResponse
+    {
+        $request->validate([
+            'license_plate' => 'required|string|unique:vehicles,license_plate',
+            'brand' => 'required|string',
+            'model' => 'required|string',
+            'active' => 'boolean'
+        ]);
+
+        return \DB::transaction(function() use ($request, $deviceId) {
+            // 1. Crear el vehículo en Postgres
+            $vehicle = Vehicle::create([
+                'license_plate' => $request->license_plate,
+                'brand' => $request->brand,
+                'model' => $request->model,
+                'active' => $request->active ?? false
+            ]);
+
+            // 2. Vincular en IoT
+            $result = $this->iotService->updateDevicePlate($deviceId, $vehicle->license_plate);
+
+            if (!$result['success']) {
+                throw new \Exception('Failed to link IoT device: ' . ($result['error'] ?? 'Unknown'));
+            }
+
+            return response()->json([
+                'message' => 'Vehicle created and device linked successfully',
+                'vehicle' => $vehicle,
+                'iot_result' => $result['result']
+            ], 201);
+        });
     }
 
     /**
