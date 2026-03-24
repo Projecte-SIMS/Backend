@@ -8,6 +8,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use App\Services\VehicleLocationService;
+use Mockery\MockInterface;
 
 class VehicleTest extends TestCase
 {
@@ -59,13 +61,68 @@ class VehicleTest extends TestCase
 
     public function test_client_can_list_available_vehicles(): void
     {
-        Vehicle::factory()->count(3)->create(['active' => false]);
-        Vehicle::factory()->count(2)->create(['active' => true]); // In use
+        // Mock IoT service to return only one vehicle as online
+        $this->mock(VehicleLocationService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getLocations')->andReturn([
+                'V1' => [
+                    'device_id' => 'dev1',
+                    'latitude' => 41.5,
+                    'longitude' => 0.5,
+                    'online' => true,
+                    'active' => false
+                ],
+                'V2' => [
+                    'device_id' => 'dev2',
+                    'latitude' => 41.6,
+                    'longitude' => 0.6,
+                    'online' => false, // Offline
+                    'active' => false
+                ]
+            ]);
+        });
+
+        Vehicle::factory()->create(['license_plate' => 'V1', 'active' => false]);
+        Vehicle::factory()->create(['license_plate' => 'V2', 'active' => false]);
 
         $response = $this->withHeader('Authorization', "Bearer {$this->clientToken}")
                          ->getJson('/api/vehicles');
 
         $response->assertStatus(200);
+        $this->assertCount(1, $response->json('data'));
+        $this->assertEquals('V1', $response->json('data.0.license_plate'));
+    }
+
+    public function test_vehicles_map_endpoint_filters_by_online_and_location(): void
+    {
+        // Mock IoT service to return only one vehicle as online
+        $this->mock(VehicleLocationService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getLocations')->andReturn([
+                'V1' => [
+                    'device_id' => 'dev1',
+                    'latitude' => 41.5,
+                    'longitude' => 0.5,
+                    'online' => true,
+                    'active' => false
+                ],
+                'V3' => [
+                    'device_id' => 'dev3',
+                    'latitude' => 0, // No location
+                    'longitude' => 0,
+                    'online' => true,
+                    'active' => false
+                ]
+            ]);
+        });
+
+        Vehicle::factory()->create(['license_plate' => 'V1', 'active' => false]);
+        Vehicle::factory()->create(['license_plate' => 'V3', 'active' => false]);
+
+        $response = $this->withHeader('Authorization', "Bearer {$this->clientToken}")
+                         ->getJson('/api/vehicles/map');
+
+        $response->assertStatus(200);
+        $this->assertCount(1, $response->json());
+        $this->assertEquals('V1', $response->json('0.plate'));
     }
 
     public function test_client_can_view_single_vehicle(): void
