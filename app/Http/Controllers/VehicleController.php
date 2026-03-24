@@ -69,14 +69,28 @@ class VehicleController extends Controller
             $location = $locations[$vehicle->license_plate] ?? null;
             $reservation = $currentReservations->get($vehicle->id)?->first();
             
+            $isOnline = (bool) ($location['online'] ?? false);
+            $hasGPS = isset($location['latitude']) && isset($location['longitude']) && 
+                      ((float)$location['latitude'] != 0 || (float)$location['longitude'] != 0);
+            
             $isMine = $reservation && $reservation->user_id === $user?->id;
             $isOccupied = ($location['active'] ?? false) === true;
-            $status = $isOccupied ? 'running' : ($reservation ? 'reserved' : 'available');
+
+            // Nuevo cálculo de status más preciso
+            if ($isOccupied) {
+                $status = 'running';
+            } elseif ($reservation) {
+                $status = 'reserved';
+            } elseif (!$isOnline || !$hasGPS) {
+                $status = 'offline'; // Fuera de servicio técnico
+            } else {
+                $status = 'available';
+            }
 
             $vehicle->setAttribute('latitude', isset($location['latitude']) ? (float)$location['latitude'] : null);
             $vehicle->setAttribute('longitude', isset($location['longitude']) ? (float)$location['longitude'] : null);
             $vehicle->setAttribute('mongo_active', $isOccupied);
-            $vehicle->setAttribute('online', (bool) ($location['online'] ?? false));
+            $vehicle->setAttribute('online', $isOnline);
             $vehicle->setAttribute('status', $status);
             $vehicle->setAttribute('is_mine', $isMine);
             $vehicle->setAttribute('iot_device_id', $location['device_id'] ?? null);
