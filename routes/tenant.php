@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
-use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
-use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\RoleController;
@@ -25,17 +23,14 @@ use App\Http\Controllers\ChatbotController;
 | Tenant Routes
 |--------------------------------------------------------------------------
 |
-| Here you can register the tenant routes for your application.
-| These routes are loaded by the TenantRouteServiceProvider.
-|
-| Feel free to customize them however you want. Good luck!
+| Tenant is identified by X-Tenant header or ?tenant= query param
+| Example: /api/login?tenant=fleetlee
 |
 */
 
 Route::middleware([
     'api',
-    InitializeTenancyByDomain::class,
-    PreventAccessFromCentralDomains::class,
+    'tenant.init',
 ])->prefix('api')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])
         ->middleware('throttle:login')
@@ -142,12 +137,12 @@ Route::middleware([
     });
 });
 
+// Web routes for tenant (optional, can be removed if not needed)
 Route::middleware([
     'web',
-    InitializeTenancyByDomain::class,
-    PreventAccessFromCentralDomains::class,
+    'tenant.init',
 ])->group(function () {
-    Route::get('/', function () {
-        return 'This is your multi-tenant application. The id of the current tenant is ' . tenant('id');
+    Route::get('/tenant-info', function () {
+        return 'Tenant: ' . tenant('id');
     });
 });

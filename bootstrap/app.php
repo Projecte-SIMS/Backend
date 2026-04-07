@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'central.admin' => \App\Http\Middleware\CentralAdminAuth::class,
+            'tenant.init' => \App\Http\Middleware\InitializeTenancyByRequestData::class,
         ]);
         
         // CORS debe estar antes que cualquier otro middleware
