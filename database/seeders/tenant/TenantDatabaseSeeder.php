@@ -21,54 +21,77 @@ class TenantDatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Cargar Permisos y Roles
-        $this->call([
-            PermissionsSeeder::class,
-            RolesSeeder::class,
-        ]);
+        try {
+            // 1. Cargar Permisos y Roles
+            $this->call([
+                PermissionsSeeder::class,
+                RolesSeeder::class,
+            ]);
+        } catch (\Exception $e) {
+            echo "⚠️ Permissions/Roles seeder error: " . $e->getMessage() . "\n";
+        }
 
         $password = Hash::make('password');
 
         // 2. Crear ADMIN
-        $admin = User::firstOrCreate(
-            ['email' => 'admin@sims.com'],
-            [
-                'name' => 'Administrador',
-                'username' => 'admin',
-                'password' => $password,
-                'active' => true,
-            ]
-        );
-        $admin->assignRole('Admin');
+        try {
+            $admin = User::firstOrCreate(
+                ['email' => 'admin@sims.com'],
+                [
+                    'name' => 'Administrador',
+                    'username' => 'admin',
+                    'password' => $password,
+                    'active' => true,
+                ]
+            );
+            $admin->assignRole('Admin');
+            echo "✅ Admin user created\n";
+        } catch (\Exception $e) {
+            echo "⚠️ Admin user error: " . $e->getMessage() . "\n";
+        }
 
         // 3. Crear CLIENTE
-        $client = User::firstOrCreate(
-            ['email' => 'client@sims.com'],
-            [
-                'name' => 'Cliente Demo',
-                'username' => 'client',
-                'password' => $password,
-                'active' => true,
-            ]
-        );
-        $client->assignRole('Client');
+        try {
+            $client = User::firstOrCreate(
+                ['email' => 'client@sims.com'],
+                [
+                    'name' => 'Cliente Demo',
+                    'username' => 'client',
+                    'password' => $password,
+                    'active' => true,
+                ]
+            );
+            $client->assignRole('Client');
+            echo "✅ Client user created\n";
+        } catch (\Exception $e) {
+            echo "⚠️ Client user error: " . $e->getMessage() . "\n";
+        }
 
         // 4. Crear MANTENIMIENTO
-        $maintenance = User::firstOrCreate(
-            ['email' => 'maint@sims.com'],
-            [
-                'name' => 'Técnico Mantenimiento',
-                'username' => 'maintenance',
-                'password' => $password,
-                'active' => true,
-            ]
-        );
-        $maintenance->assignRole('Maintenance');
+        try {
+            $maintenance = User::firstOrCreate(
+                ['email' => 'maint@sims.com'],
+                [
+                    'name' => 'Técnico Mantenimiento',
+                    'username' => 'maintenance',
+                    'password' => $password,
+                    'active' => true,
+                ]
+            );
+            $maintenance->assignRole('Maintenance');
+            echo "✅ Maintenance user created\n";
+        } catch (\Exception $e) {
+            echo "⚠️ Maintenance user error: " . $e->getMessage() . "\n";
+        }
 
         // 5. Crear datos de prueba
-        $this->call([
-            TestDataSeeder::class,
-        ]);
+        try {
+            $this->call([
+                TestDataSeeder::class,
+            ]);
+        } catch (\Exception $e) {
+            echo "⚠️ Test data seeder error: " . $e->getMessage() . "\n";
+        }
 
         // 6. Crear ubicaciones de vehículos (MongoDB) - skip if not available
         try {
@@ -79,8 +102,6 @@ class TenantDatabaseSeeder extends Seeder
             echo "⚠️ MongoDB seeder skipped: " . $e->getMessage() . "\n";
         }
 
-        echo "\n🚀 Tenant Database seeded successfully!\n";
-        echo "📧 Users: admin@sims.com, client@sims.com, maint@sims.com\n";
-        echo "🔑 Password: password\n";
+        echo "\n🚀 Tenant Database seeded!\n";
     }
 }
