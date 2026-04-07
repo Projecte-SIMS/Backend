@@ -38,6 +38,7 @@ foreach (config('tenancy.central_domains') as $domain) {
             Route::post('/', [TenantController::class, 'store']);
             Route::get('/{id}', [TenantController::class, 'show']);
             Route::post('/{id}/domains', [TenantController::class, 'addDomain']);
+            Route::post('/{id}/reset-password', [TenantController::class, 'resetAdminPassword']);
             Route::delete('/{id}', [TenantController::class, 'destroy']);
         });
     });
