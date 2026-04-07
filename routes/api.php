@@ -3,7 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\DatabaseCheckController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,9 +27,6 @@ foreach (config('tenancy.central_domains') as $domain) {
                 'message' => 'SIMS Central API - Use tenant domains to access tenant APIs',
             ]);
         });
-
-        // Database check endpoint (debug)
-        Route::get('/db-check', [DatabaseCheckController::class, 'check']);
 
         // Central authentication for super admin
         Route::post('/central/login', [AuthController::class, 'centralLogin'])
