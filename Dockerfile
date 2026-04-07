@@ -25,7 +25,8 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 # Exponemos el puerto 8000 por defecto
 EXPOSE 8000
 
-# Comando final: LIMPIEZA TOTAL, Migración y Seedado automático (Usuarios/Roles)
+# Comando final: Migración central + seed (crea tenant por defecto si no existe)
 CMD php artisan config:cache && \
-    php artisan migrate:fresh --seed --force && \
+    php artisan migrate --force && \
+    php artisan db:seed --force && \
     php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
