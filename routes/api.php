@@ -1,124 +1,44 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-
-use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\PermissionController;
 
-use App\Http\Controllers\VehicleController;
-use App\Http\Controllers\TicketController;
-use App\Http\Controllers\TicketMessageController;
-use App\Http\Controllers\ReservationController;
-use App\Http\Controllers\AdminReservationController;
-use App\Http\Controllers\IoTController;
+/*
+|--------------------------------------------------------------------------
+| Central API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your central application.
+| These routes are loaded by the RouteServiceProvider within a group which
+| is assigned the "api" middleware group.
+|
+| These routes are only accessible from central domains (localhost, 127.0.0.1)
+|
+*/
 
-use App\Http\Controllers\ChatbotController;
+foreach (config('tenancy.central_domains') as $domain) {
+    Route::domain($domain)->group(function () {
+        // Health check endpoint
+        Route::get('/health', function () {
+            return response()->json([
+                'status' => 'ok',
+                'type' => 'central',
+                'message' => 'SIMS Central API - Use tenant domains to access tenant APIs',
+            ]);
+        });
 
+        // Central authentication for super admin
+        Route::post('/central/login', [AuthController::class, 'centralLogin'])
+            ->middleware('throttle:login');
 
-Route::post('/login', [AuthController::class, 'login'])
-    ->middleware('throttle:login')
-    ->name('login');
-
-Route::post('/register', [AuthController::class, 'register'])
-    ->middleware('throttle:login')
-    ->name('register');
-
-
-
-// Endpoint PÚBLICO para ver vehículos disponibles en el mapa (sin autenticación)
-Route::get('/public/vehicles/map', [VehicleController::class, 'publicMap']);
-
-Route::middleware('auth:sanctum')->group(function () {
-    
-    Route::post('/logout', [AuthController::class, 'logout']);
-    
-    // Chatbot endpoint with rate limiting
-    Route::post('/chatbot/chat', [ChatbotController::class, 'chat'])
-        ->middleware('throttle:chatbot');
-
-    // Users endpoints
-    Route::get('/users/me', [UserController::class, 'me']);
-    Route::put('/users/me', [UserController::class, 'updateMe']);
-    Route::delete('/users/me', [UserController::class, 'destroyMe']);
-
-    // Vehicles (Client) - usuario autenticado
-    Route::get('vehicles', [VehicleController::class, 'index']);
-    Route::get('vehicles/map', [VehicleController::class, 'map']);
-    Route::get('vehicles/{vehicle}', [VehicleController::class, 'show']);
-
-    // Tiquets (Client)
-    Route::get('tickets', [TicketController::class, 'index']);
-    Route::post('tickets', [TicketController::class, 'store']);
-    Route::get('tickets/{ticket}', [TicketController::class, 'show']);
-    Route::post('tickets/{ticket}/messages', [TicketMessageController::class, 'store']);
-    Route::delete('messages/{message}', [TicketMessageController::class, 'destroy']);
-
-    // Reserves (Client)
-    Route::get('reservations', [ReservationController::class, 'index']);
-    Route::post('reservations', [ReservationController::class, 'store']);
-    Route::get('reservations/{reservation}', [ReservationController::class, 'show']);
-    Route::post('reservations/{reservation}/activate', [ReservationController::class, 'activate']);
-    Route::post('reservations/{reservation}/finish', [ReservationController::class, 'finish']);
-    Route::post('reservations/{reservation}/cancel', [ReservationController::class, 'cancel']);
-    Route::post('reservations/{reservation}/on', [ReservationController::class, 'turnOn']);
-    Route::post('reservations/{reservation}/off', [ReservationController::class, 'turnOff']);
-    Route::post('reservations/{reservation}/force-finish', [ReservationController::class, 'forceFinish']);
-
-    // IoT endpoints (lectura para usuarios autenticados)
-    Route::prefix('iot')->group(function () {
-        Route::get('devices', [IoTController::class, 'devices']);
-        Route::get('devices/{deviceId}', [IoTController::class, 'device']);
-        Route::get('devices/{deviceId}/ping', [IoTController::class, 'ping']);
+        // Tenant management routes (protected with central admin middleware)
+        Route::middleware('central.admin')->prefix('tenants')->group(function () {
+            Route::get('/', [TenantController::class, 'index']);
+            Route::post('/', [TenantController::class, 'store']);
+            Route::get('/{id}', [TenantController::class, 'show']);
+            Route::post('/{id}/domains', [TenantController::class, 'addDomain']);
+            Route::delete('/{id}', [TenantController::class, 'destroy']);
+        });
     });
-
-    
-    // Admin endpoints (Admin only operations)
-    Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
-        // Users (solo admin)
-        Route::apiResource('users', UserController::class);
-        // Roles (solo admin)
-        Route::apiResource('roles', RoleController::class);
-        // Permissions (solo admin)
-        Route::get('permissions', [PermissionController::class, 'index']);
-        Route::post('permissions', [PermissionController::class, 'store']);
-        Route::put('permissions/{id}', [PermissionController::class, 'update']);
-        Route::delete('permissions/{id}', [PermissionController::class, 'destroy']);
-        // Vehicles
-        Route::get('vehicles/map', [VehicleController::class, 'adminMap']);
-        Route::apiResource('vehicles', VehicleController::class);
-        // Tickets
-        Route::get('tickets', [TicketController::class, 'index']);
-        Route::post('tickets', [TicketController::class, 'store']);
-        Route::get('tickets/{ticket}', [TicketController::class, 'show']);
-        Route::put('tickets/{ticket}', [TicketController::class, 'update']);
-        Route::delete('tickets/{ticket}', [TicketController::class, 'destroy']);
-        Route::post('tickets/{ticket}/messages', [TicketMessageController::class, 'store']);
-        // Reservations
-        Route::get('reservations', [AdminReservationController::class, 'index'])->name('reservations.index');
-        Route::post('reservations', [AdminReservationController::class, 'store'])->name('reservations.store');
-        Route::get('reservations/{id}', [AdminReservationController::class, 'show'])->name('reservations.show');
-        Route::put('reservations/{id}', [AdminReservationController::class, 'update'])->name('reservations.update');
-        Route::delete('reservations/{id}', [AdminReservationController::class, 'destroy'])->name('reservations.destroy');
-        Route::post('reservations/{id}/force-finish', [AdminReservationController::class, 'forceFinish'])->name('reservations.forceFinish');
-        
-        // IoT Admin endpoints (solo admin)
-        Route::get('iot/health', [IoTController::class, 'health']);
-        Route::get('iot/logs', [IoTController::class, 'logs']);
-        Route::get('iot/devices', [IoTController::class, 'devices']);
-        
-        // IoT Commands (solo admin puede enviar comandos)
-        Route::post('iot/devices/{deviceId}/on', [IoTController::class, 'turnOn']);
-        Route::post('iot/devices/{deviceId}/off', [IoTController::class, 'turnOff']);
-        Route::post('iot/devices/{deviceId}/command', [IoTController::class, 'sendCommand']);
-        
-        // IoT Device Linking (vincular dispositivos a vehículos)
-        Route::post('iot/devices/{deviceId}/link', [IoTController::class, 'linkToVehicle']);
-        Route::post('iot/devices/{deviceId}/unlink', [IoTController::class, 'unlinkDevice']);
-        Route::delete('iot/devices/{deviceId}', [IoTController::class, 'destroy']);
-        Route::post('iot/devices/{deviceId}/create-vehicle', [IoTController::class, 'createVehicleAndLink']);
-        Route::get('iot/devices/unlinked', [IoTController::class, 'unlinkedDevices']);
-        Route::get('iot/vehicles/available', [IoTController::class, 'availableVehicles']);
-    });
-});
+}

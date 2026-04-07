@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'central.admin' => \App\Http\Middleware\CentralAdminAuth::class,
         ]);
         
         // CORS debe estar antes que cualquier otro middleware
