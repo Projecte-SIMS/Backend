@@ -4,14 +4,16 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class TenantController extends Controller
 {
     /**
-     * List all tenants
+     * List all tenants with admin info
      */
     public function index()
     {
@@ -20,14 +22,48 @@ class TenantController extends Controller
         return response()->json([
             'success' => true,
             'data' => $tenants->map(function ($tenant) {
+                // Get admin user from tenant's database
+                $adminInfo = $this->getTenantAdmin($tenant);
+                
                 return [
                     'id' => $tenant->id,
                     'domains' => $tenant->domains->pluck('domain'),
+                    'admin_email' => $adminInfo['email'] ?? 'admin@sims.com',
+                    'admin_username' => $adminInfo['username'] ?? 'admin',
                     'created_at' => $tenant->created_at,
                     'updated_at' => $tenant->updated_at,
                 ];
             }),
         ]);
+    }
+
+    /**
+     * Get admin user info from tenant database
+     */
+    private function getTenantAdmin(Tenant $tenant): array
+    {
+        try {
+            $admin = null;
+            $tenant->run(function () use (&$admin) {
+                $admin = User::role('Admin')->first();
+            });
+            
+            if ($admin) {
+                return [
+                    'email' => $admin->email,
+                    'username' => $admin->username,
+                    'name' => $admin->name,
+                ];
+            }
+        } catch (\Exception $e) {
+            // Schema might not exist yet
+        }
+        
+        return [
+            'email' => 'admin@sims.com',
+            'username' => 'admin',
+            'name' => 'Administrador',
+        ];
     }
 
     /**
@@ -65,7 +101,8 @@ class TenantController extends Controller
                 'data' => [
                     'id' => $tenant->id,
                     'domain' => $request->domain,
-                    'database' => 'tenant' . $tenant->id,
+                    'admin_email' => 'admin@sims.com',
+                    'admin_password' => 'password',
                 ],
             ], 201);
         } catch (\Exception $e) {
@@ -91,15 +128,63 @@ class TenantController extends Controller
             ], 404);
         }
 
+        $adminInfo = $this->getTenantAdmin($tenant);
+
         return response()->json([
             'success' => true,
             'data' => [
                 'id' => $tenant->id,
                 'domains' => $tenant->domains->pluck('domain'),
+                'admin_email' => $adminInfo['email'],
+                'admin_username' => $adminInfo['username'],
+                'admin_name' => $adminInfo['name'],
                 'created_at' => $tenant->created_at,
                 'updated_at' => $tenant->updated_at,
             ],
         ]);
+    }
+
+    /**
+     * Reset admin password for a tenant
+     */
+    public function resetAdminPassword(Request $request, string $id)
+    {
+        $tenant = Tenant::find($id);
+
+        if (!$tenant) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tenant no encontrado',
+            ], 404);
+        }
+
+        // Generate new password or use provided one
+        $newPassword = $request->input('password', Str::random(12));
+
+        try {
+            $tenant->run(function () use ($newPassword) {
+                $admin = User::role('Admin')->first();
+                if ($admin) {
+                    $admin->password = Hash::make($newPassword);
+                    $admin->save();
+                }
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Contraseña del admin actualizada',
+                'data' => [
+                    'tenant_id' => $tenant->id,
+                    'new_password' => $newPassword,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al resetear contraseña',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
