@@ -10,4 +10,15 @@ use Stancl\Tenancy\Database\Concerns\HasDomains;
 class Tenant extends BaseTenant implements TenantWithDatabase
 {
     use HasDatabase, HasDomains;
+
+    /**
+     * Get custom columns for the tenants table
+     */
+    public static function getCustomColumns(): array
+    {
+        return [
+            'id',
+            'data',
+        ];
+    }
 }
