@@ -19,6 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.init' => \App\Http\Middleware\InitializeTenancyByRequestData::class,
         ]);
         
+        // Trust proxies for Render/Vercel
+        $middleware->trustProxies(at: '*');
+        
         // CORS debe estar antes que cualquier otro middleware
         $middleware->prepend(\Illuminate\Http\Middleware\HandleCors::class);
     })
