@@ -42,11 +42,15 @@ Route::middleware([
 
     // Debug endpoint to check tenant context
     Route::get('/debug/tenant', function () {
+        $tenantId = tenancy()->tenant?->id ?? null;
+        $schemaName = $tenantId ? 'tenant_' . $tenantId : 'public';
+        
         return response()->json([
             'tenancy_initialized' => tenancy()->initialized,
-            'tenant_id' => tenancy()->tenant?->id ?? null,
+            'tenant_id' => $tenantId,
+            'schema_name' => $schemaName,
             'connection' => \DB::connection()->getName(),
-            'tables' => \DB::select("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' LIMIT 10"),
+            'tables' => \DB::select("SELECT table_name FROM information_schema.tables WHERE table_schema = ? LIMIT 30", [$schemaName]),
         ]);
     });
 
