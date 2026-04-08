@@ -116,7 +116,7 @@ return [
      */
     'migration_parameters' => [
         '--force' => true,
-        '--path' => [database_path('migrations/tenant')],
+        '--path' => 'database/migrations/tenant',
         '--realpath' => true,
     ],
 
@@ -125,5 +125,6 @@ return [
      */
     'seeder_parameters' => [
         '--class' => 'Database\\Seeders\\Tenant\\TenantDatabaseSeeder',
+        '--force' => true,
     ],
 ];

@@ -89,42 +89,33 @@ class TenantController extends Controller
         }
 
         try {
-            // Create tenant (this triggers database creation)
+            // Create tenant - this triggers automatic:
+            // 1. CreateDatabase (creates schema tenant_<id>)
+            // 2. MigrateDatabase (runs migrations from config tenancy.migration_parameters)
+            // 3. SeedDatabase (runs seeder from config tenancy.seeder_parameters)
             $tenant = Tenant::create(['id' => $request->id]);
-            
-            $migrationOutput = '';
-            $seederOutput = '';
-            $seederError = null;
-            $migrationError = null;
-            
-            // Force run migrations manually
-            $tenant->run(function () use (&$migrationOutput, &$seederOutput, &$seederError, &$migrationError) {
-                try {
-                    $exitCode = \Artisan::call('migrate', [
-                        '--force' => true,
-                        '--path' => database_path('migrations/tenant'),
-                        '--realpath' => true,
-                    ]);
-                    
-                    $migrationOutput = \Artisan::output();
-                } catch (\Exception $e) {
-                    $migrationError = $e->getMessage();
-                }
-                
-                // Run seeders to create permissions, roles and users
-                try {
-                    \Artisan::call('db:seed', [
-                        '--class' => 'Database\\Seeders\\Tenant\\TenantDatabaseSeeder',
-                        '--force' => true,
-                    ]);
-                    $seederOutput = \Artisan::output();
-                } catch (\Exception $e) {
-                    $seederError = $e->getMessage();
-                }
-            });
             
             // Create domain for the tenant
             $tenant->domains()->create(['domain' => $request->domain]);
+            
+            // Verify tables were created by checking if users table exists
+            $tablesCreated = false;
+            $tableList = [];
+            $usersCount = 0;
+            
+            $tenant->run(function () use (&$tablesCreated, &$tableList, &$usersCount) {
+                $schemaName = 'tenant_' . tenant('id');
+                $tables = \DB::select(
+                    "SELECT table_name FROM information_schema.tables WHERE table_schema = ?", 
+                    [$schemaName]
+                );
+                $tableList = array_map(fn($t) => $t->table_name, $tables);
+                $tablesCreated = in_array('users', $tableList);
+                
+                if ($tablesCreated) {
+                    $usersCount = \App\Models\User::count();
+                }
+            });
 
             return response()->json([
                 'success' => true,
@@ -134,10 +125,9 @@ class TenantController extends Controller
                     'domain' => $request->domain,
                     'admin_email' => 'admin@sims.com',
                     'admin_password' => 'password',
-                    'migration_output' => $migrationOutput,
-                    'migration_error' => $migrationError,
-                    'seeder_output' => $seederOutput,
-                    'seeder_error' => $seederError,
+                    'tables_created' => $tablesCreated,
+                    'tables' => $tableList,
+                    'users_count' => $usersCount,
                 ],
             ], 201);
         } catch (\Exception $e) {
