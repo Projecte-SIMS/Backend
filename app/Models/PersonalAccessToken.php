@@ -7,10 +7,14 @@ use Laravel\Sanctum\PersonalAccessToken as SanctumPersonalAccessToken;
 class PersonalAccessToken extends SanctumPersonalAccessToken
 {
     /**
-     * Use the tenant connection when in tenant context
+     * Use the tenant connection when tenancy is initialized
      */
     public function getConnectionName()
     {
-        return config('tenancy.database.connection_name') ?: parent::getConnectionName();
+        if (function_exists('tenancy') && tenancy()->initialized) {
+            return 'tenant';
+        }
+        
+        return parent::getConnectionName();
     }
 }
