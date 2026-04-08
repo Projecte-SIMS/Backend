@@ -93,9 +93,11 @@ class TenantController extends Controller
             $tenant = Tenant::create(['id' => $request->id]);
             
             $migrationOutput = '';
+            $seederOutput = '';
+            $seederError = null;
             
             // Force run migrations manually
-            $tenant->run(function () use (&$migrationOutput) {
+            $tenant->run(function () use (&$migrationOutput, &$seederOutput, &$seederError) {
                 $exitCode = \Artisan::call('migrate', [
                     '--force' => true,
                     '--path' => 'database/migrations/tenant',
@@ -104,12 +106,15 @@ class TenantController extends Controller
                 $migrationOutput = \Artisan::output();
                 
                 // Run seeders to create permissions, roles and users
-                \Artisan::call('db:seed', [
-                    '--class' => 'Database\\Seeders\\Tenant\\TenantDatabaseSeeder',
-                    '--force' => true,
-                ]);
-                
-                $migrationOutput .= \Artisan::output();
+                try {
+                    \Artisan::call('db:seed', [
+                        '--class' => 'Database\\Seeders\\Tenant\\TenantDatabaseSeeder',
+                        '--force' => true,
+                    ]);
+                    $seederOutput = \Artisan::output();
+                } catch (\Exception $e) {
+                    $seederError = $e->getMessage();
+                }
             });
             
             // Create domain for the tenant
@@ -124,6 +129,8 @@ class TenantController extends Controller
                     'admin_email' => 'admin@sims.com',
                     'admin_password' => 'password',
                     'migration_output' => $migrationOutput,
+                    'seeder_output' => $seederOutput,
+                    'seeder_error' => $seederError,
                 ],
             ], 201);
         } catch (\Exception $e) {
@@ -131,6 +138,7 @@ class TenantController extends Controller
                 'success' => false,
                 'message' => 'Error al crear el tenant',
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ], 500);
         }
     }
