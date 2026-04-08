@@ -65,9 +65,6 @@ Route::middleware([
         Route::get('/users/me', [UserController::class, 'me']);
         Route::put('/users/me', [UserController::class, 'updateMe']);
         Route::delete('/users/me', [UserController::class, 'destroyMe']);
-        
-        // Debug auth
-        Route::get('/debug/auth', [\App\Http\Controllers\Api\DebugController::class, 'testAuth']);
 
         // Vehicles (Client) - usuario autenticado
         Route::get('vehicles', [VehicleController::class, 'index']);
@@ -160,3 +157,4 @@ Route::middleware([
     });
 });
 
+// Debug auth
