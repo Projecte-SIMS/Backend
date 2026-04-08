@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'central.admin' => \App\Http\Middleware\CentralAdminAuth::class,
             'tenant.init' => \App\Http\Middleware\InitializeTenancyByRequestData::class,
+            'tenant.auth' => \App\Http\Middleware\TenantSanctumAuth::class,
         ]);
         
         // Trust proxies for Render/Vercel
