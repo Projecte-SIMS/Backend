@@ -24,9 +24,14 @@ class User extends Authenticatable
     protected static function booted(): void
     {
         static::created(function (User $user) {
-            if ($user->roles->isEmpty()) {
-                $role = Role::firstOrCreate(['name' => 'Client']);
-                $user->assignRole($role);
+            try {
+                if ($user->roles->isEmpty()) {
+                    $role = Role::firstOrCreate(['name' => 'Client', 'guard_name' => 'web']);
+                    $user->assignRole($role);
+                }
+            } catch (\Exception $e) {
+                // Roles table might not exist yet during migrations
+                \Log::warning('Could not assign default role: ' . $e->getMessage());
             }
         });
     }
