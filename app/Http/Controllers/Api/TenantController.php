@@ -92,12 +92,16 @@ class TenantController extends Controller
             // Create tenant (this triggers database creation)
             $tenant = Tenant::create(['id' => $request->id]);
             
+            $migrationOutput = '';
+            
             // Force run migrations manually
-            $tenant->run(function () {
-                \Artisan::call('migrate', [
+            $tenant->run(function () use (&$migrationOutput) {
+                $exitCode = \Artisan::call('migrate', [
                     '--force' => true,
                     '--path' => 'database/migrations/tenant',
                 ]);
+                
+                $migrationOutput = \Artisan::output();
                 
                 // Create admin user directly
                 $password = Hash::make('password');
@@ -144,6 +148,7 @@ class TenantController extends Controller
                     'domain' => $request->domain,
                     'admin_email' => 'admin@sims.com',
                     'admin_password' => 'password',
+                    'migration_output' => $migrationOutput,
                 ],
             ], 201);
         } catch (\Exception $e) {
