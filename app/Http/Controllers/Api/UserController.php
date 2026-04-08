@@ -128,16 +128,27 @@ class UserController extends Controller
      */
     public function me()
     {
-        $user = auth()->user();
-        
-        // Try to load roles if they exist
         try {
-            $user->load('roles.permissions');
+            $user = auth()->user();
+            
+            if (!$user) {
+                return response()->json(['error' => 'User not authenticated'], 401);
+            }
+            
+            // Try to load roles if they exist
+            try {
+                $user->load('roles.permissions');
+            } catch (\Exception $e) {
+                // Roles table might not exist, continue without roles
+            }
+            
+            return response()->json(['user' => $user]);
         } catch (\Exception $e) {
-            // Roles table might not exist
+            return response()->json([
+                'error' => 'Error in me endpoint',
+                'message' => $e->getMessage(),
+            ], 500);
         }
-        
-        return response()->json(['user' => $user]);
     }
 
     /**
