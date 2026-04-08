@@ -12,32 +12,42 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
-
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['Incorrect credentials.'],
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required',
             ]);
-        }
 
-        if (!$user->active) {
+            $user = User::where('email', $request->email)->first();
+
+            if (!$user || !Hash::check($request->password, $user->password)) {
+                throw ValidationException::withMessages([
+                    'email' => ['Incorrect credentials.'],
+                ]);
+            }
+
+            if (!$user->active) {
+                return response()->json([
+                    'message' => 'User inactive.'
+                ], 403);
+            }
+
+            $token = $user->createToken('api-token')->plainTextToken;
+
             return response()->json([
-                'message' => 'User inactive.'
-            ], 403);
+                'message' => 'Login successful',
+                'token' => $token,
+                'user' => $user,
+            ]);
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error during login',
+                'error' => $e->getMessage(),
+                'tenant' => tenancy()->initialized ? tenancy()->tenant->id : 'not initialized',
+            ], 500);
         }
-
-        $token = $user->createToken('api-token')->plainTextToken;
-
-        return response()->json([
-            'message' => 'Login successful',
-            'token' => $token,
-            'user' => $user,
-        ]);
     }
 
     public function register(Request $request)
