@@ -89,12 +89,17 @@ class TenantController extends Controller
         }
 
         try {
-            // Create tenant (this triggers database creation and migrations)
+            // Create tenant (this triggers database creation)
             $tenant = Tenant::create(['id' => $request->id]);
             
-            // Force run seeder manually to ensure users are created
+            // Force run migrations manually
             $tenant->run(function () {
-                // Create admin user directly without using seeders
+                \Artisan::call('migrate', [
+                    '--force' => true,
+                    '--path' => 'database/migrations/tenant',
+                ]);
+                
+                // Create admin user directly
                 $password = Hash::make('password');
                 
                 $admin = User::firstOrCreate(
