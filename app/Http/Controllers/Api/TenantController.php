@@ -95,15 +95,21 @@ class TenantController extends Controller
             $migrationOutput = '';
             $seederOutput = '';
             $seederError = null;
+            $migrationError = null;
             
             // Force run migrations manually
-            $tenant->run(function () use (&$migrationOutput, &$seederOutput, &$seederError) {
-                $exitCode = \Artisan::call('migrate', [
-                    '--force' => true,
-                    '--path' => 'database/migrations/tenant',
-                ]);
-                
-                $migrationOutput = \Artisan::output();
+            $tenant->run(function () use (&$migrationOutput, &$seederOutput, &$seederError, &$migrationError) {
+                try {
+                    $exitCode = \Artisan::call('migrate', [
+                        '--force' => true,
+                        '--path' => database_path('migrations/tenant'),
+                        '--realpath' => true,
+                    ]);
+                    
+                    $migrationOutput = \Artisan::output();
+                } catch (\Exception $e) {
+                    $migrationError = $e->getMessage();
+                }
                 
                 // Run seeders to create permissions, roles and users
                 try {
@@ -129,6 +135,7 @@ class TenantController extends Controller
                     'admin_email' => 'admin@sims.com',
                     'admin_password' => 'password',
                     'migration_output' => $migrationOutput,
+                    'migration_error' => $migrationError,
                     'seeder_output' => $seederOutput,
                     'seeder_error' => $seederError,
                 ],
