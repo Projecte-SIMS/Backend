@@ -94,8 +94,38 @@ class TenantController extends Controller
             
             // Force run seeder manually to ensure users are created
             $tenant->run(function () {
-                $seeder = new \Database\Seeders\Tenant\TenantDatabaseSeeder();
-                $seeder->run();
+                // Create admin user directly without using seeders
+                $password = Hash::make('password');
+                
+                $admin = User::firstOrCreate(
+                    ['email' => 'admin@sims.com'],
+                    [
+                        'name' => 'Administrador',
+                        'username' => 'admin',
+                        'password' => $password,
+                        'active' => true,
+                    ]
+                );
+                
+                $client = User::firstOrCreate(
+                    ['email' => 'client@sims.com'],
+                    [
+                        'name' => 'Cliente Demo',
+                        'username' => 'client',
+                        'password' => $password,
+                        'active' => true,
+                    ]
+                );
+                
+                $maint = User::firstOrCreate(
+                    ['email' => 'maint@sims.com'],
+                    [
+                        'name' => 'Técnico Mantenimiento',
+                        'username' => 'maintenance',
+                        'password' => $password,
+                        'active' => true,
+                    ]
+                );
             });
             
             // Create domain for the tenant
