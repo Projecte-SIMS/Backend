@@ -40,6 +40,16 @@ Route::middleware([
         ->middleware('throttle:login')
         ->name('register');
 
+    // Debug endpoint to check tenant context
+    Route::get('/debug/tenant', function () {
+        return response()->json([
+            'tenancy_initialized' => tenancy()->initialized,
+            'tenant_id' => tenancy()->tenant?->id ?? null,
+            'connection' => \DB::connection()->getName(),
+            'tables' => \DB::select("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' LIMIT 10"),
+        ]);
+    });
+
     // Endpoint PÚBLICO para ver vehículos disponibles en el mapa (sin autenticación)
     Route::get('/public/vehicles/map', [VehicleController::class, 'publicMap']);
 
