@@ -156,3 +156,7 @@ Route::middleware([
         return 'Tenant: ' . tenant('id');
     });
 });
+
+// Debug auth
+Route::get('/debug/auth', [\App\Http\Controllers\Api\DebugController::class, 'testAuth'])
+    ->middleware('auth:sanctum');
