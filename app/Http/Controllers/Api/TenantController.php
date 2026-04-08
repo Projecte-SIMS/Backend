@@ -89,8 +89,14 @@ class TenantController extends Controller
         }
 
         try {
-            // Create tenant (this triggers database creation, migrations and seeding)
+            // Create tenant (this triggers database creation and migrations)
             $tenant = Tenant::create(['id' => $request->id]);
+            
+            // Force run seeder manually to ensure users are created
+            $tenant->run(function () {
+                $seeder = new \Database\Seeders\Tenant\TenantDatabaseSeeder();
+                $seeder->run();
+            });
             
             // Create domain for the tenant
             $tenant->domains()->create(['domain' => $request->domain]);
