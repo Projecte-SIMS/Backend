@@ -128,7 +128,15 @@ class UserController extends Controller
      */
     public function me()
     {
-        $user = auth()->user()->load('roles.permissions');
+        $user = auth()->user();
+        
+        // Try to load roles if they exist
+        try {
+            $user->load('roles.permissions');
+        } catch (\Exception $e) {
+            // Roles table might not exist
+        }
+        
         return response()->json(['user' => $user]);
     }
 
