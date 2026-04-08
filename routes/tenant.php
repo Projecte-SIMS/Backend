@@ -53,7 +53,7 @@ Route::middleware([
     // Endpoint PÚBLICO para ver vehículos disponibles en el mapa (sin autenticación)
     Route::get('/public/vehicles/map', [VehicleController::class, 'publicMap']);
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('tenant.auth')->group(function () {
         
         Route::post('/logout', [AuthController::class, 'logout']);
         

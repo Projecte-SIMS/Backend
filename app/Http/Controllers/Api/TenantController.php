@@ -103,38 +103,13 @@ class TenantController extends Controller
                 
                 $migrationOutput = \Artisan::output();
                 
-                // Create admin user directly
-                $password = Hash::make('password');
+                // Run seeders to create permissions, roles and users
+                \Artisan::call('db:seed', [
+                    '--class' => 'Database\\Seeders\\Tenant\\TenantDatabaseSeeder',
+                    '--force' => true,
+                ]);
                 
-                $admin = User::firstOrCreate(
-                    ['email' => 'admin@sims.com'],
-                    [
-                        'name' => 'Administrador',
-                        'username' => 'admin',
-                        'password' => $password,
-                        'active' => true,
-                    ]
-                );
-                
-                $client = User::firstOrCreate(
-                    ['email' => 'client@sims.com'],
-                    [
-                        'name' => 'Cliente Demo',
-                        'username' => 'client',
-                        'password' => $password,
-                        'active' => true,
-                    ]
-                );
-                
-                $maint = User::firstOrCreate(
-                    ['email' => 'maint@sims.com'],
-                    [
-                        'name' => 'Técnico Mantenimiento',
-                        'username' => 'maintenance',
-                        'password' => $password,
-                        'active' => true,
-                    ]
-                );
+                $migrationOutput .= \Artisan::output();
             });
             
             // Create domain for the tenant
