@@ -13,7 +13,9 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        'https://frontend-nine-orcin-waqisje40z.vercel.app',
+        'https://frontend-phi-seven-21.vercel.app',
+        'https://frontend-git-main-jordimlies-projects.vercel.app',
+        'https://frontend-i5diqvsby-jordimlies-projects.vercel.app',
         'http://localhost:5173',
         'http://localhost:3000'
     ],
