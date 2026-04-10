@@ -89,14 +89,20 @@ class TenantController extends Controller
         }
 
         try {
+            \Log::info('Creating tenant', ['id' => $request->id, 'domain' => $request->domain]);
+            
             // Create tenant - this triggers automatic:
             // 1. CreateDatabase (creates schema tenant_<id>)
             // 2. MigrateDatabase (runs migrations from config tenancy.migration_parameters)
             // 3. SeedDatabase (runs seeder from config tenancy.seeder_parameters)
             $tenant = Tenant::create(['id' => $request->id]);
             
+            \Log::info('Tenant created successfully', ['id' => $tenant->id]);
+            
             // Create domain for the tenant
             $tenant->domains()->create(['domain' => $request->domain]);
+            
+            \Log::info('Domain created', ['domain' => $request->domain, 'tenant_id' => $tenant->id]);
             
             // Verify tables were created by checking if users table exists
             $tablesCreated = false;
@@ -104,16 +110,28 @@ class TenantController extends Controller
             $usersCount = 0;
             
             $tenant->run(function () use (&$tablesCreated, &$tableList, &$usersCount) {
-                $schemaName = 'tenant_' . tenant('id');
-                $tables = \DB::select(
-                    "SELECT table_name FROM information_schema.tables WHERE table_schema = ?", 
-                    [$schemaName]
-                );
-                $tableList = array_map(fn($t) => $t->table_name, $tables);
-                $tablesCreated = in_array('users', $tableList);
-                
-                if ($tablesCreated) {
-                    $usersCount = \App\Models\User::count();
+                try {
+                    $schemaName = 'tenant_' . tenant('id');
+                    $tables = \DB::select(
+                        "SELECT table_name FROM information_schema.tables WHERE table_schema = ?", 
+                        [$schemaName]
+                    );
+                    $tableList = array_map(fn($t) => $t->table_name, $tables);
+                    $tablesCreated = in_array('users', $tableList);
+                    
+                    if ($tablesCreated) {
+                        $usersCount = \App\Models\User::count();
+                    }
+                    
+                    \Log::info('Tenant tables verified', [
+                        'tables' => $tableList,
+                        'users_count' => $usersCount,
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Error verifying tenant tables', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
                 }
             });
 
@@ -131,11 +149,18 @@ class TenantController extends Controller
                 ],
             ], 201);
         } catch (\Exception $e) {
+            \Log::error('Tenant creation failed', [
+                'id' => $request->id,
+                'domain' => $request->domain,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Error al crear el tenant',
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null,
             ], 500);
         }
     }
