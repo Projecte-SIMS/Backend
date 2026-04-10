@@ -102,6 +102,7 @@ class TenancyServiceProvider extends ServiceProvider
         $this->bootEvents();
         $this->mapRoutes();
 
+        // Don't make tenancy middleware highest priority if it's a central API route
         $this->makeTenancyMiddlewareHighestPriority();
     }
 
@@ -132,7 +133,7 @@ class TenancyServiceProvider extends ServiceProvider
     {
         $tenancyMiddleware = [
             // Even higher priority than the initialization middleware
-            Middleware\PreventAccessFromCentralDomains::class,
+            \App\Http\Middleware\PreventAccessFromCentralDomainsExceptApi::class,
 
             Middleware\InitializeTenancyByDomain::class,
             Middleware\InitializeTenancyBySubdomain::class,

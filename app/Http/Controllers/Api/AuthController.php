@@ -101,42 +101,46 @@ class AuthController extends Controller
      */
     public function centralLogin(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
-
-        $centralEmail = env('CENTRAL_ADMIN_EMAIL', 'superadmin@sims.com');
-        $centralPassword = env('CENTRAL_ADMIN_PASSWORD', 'supersecret');
-
-        if ($request->email !== $centralEmail || $request->password !== $centralPassword) {
-            throw ValidationException::withMessages([
-                'email' => ['Credenciales incorrectas.'],
+        try {
+            $validated = $request->validate([
+                'email' => 'required|email',
+                'password' => 'required',
             ]);
+
+            $centralEmail = env('CENTRAL_ADMIN_EMAIL', 'superadmin@sims.com');
+            $centralPassword = env('CENTRAL_ADMIN_PASSWORD', 'supersecret');
+
+            if ($validated['email'] !== $centralEmail || $validated['password'] !== $centralPassword) {
+                throw ValidationException::withMessages([
+                    'email' => ['Credenciales incorrectas.'],
+                ]);
+            }
+
+            // For central auth, we use a simple token approach
+            $token = base64_encode($centralEmail . ':' . now()->timestamp . ':' . \Illuminate\Support\Str::random(32));
+
+            // Store token in cache for validation
+            cache()->put('central_token:' . $token, true, now()->addHours(24));
+
+            return response()->json([
+                'message' => 'Login central exitoso',
+                'token' => $token,
+                'user' => [
+                    'name' => 'Super Admin',
+                    'email' => $centralEmail,
+                    'role' => 'super_admin',
+                ],
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation error',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Login error',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-
-        // Create a temporary user model for token generation (not persisted)
-        $superAdmin = new User([
-            'id' => 0,
-            'name' => 'Super Admin',
-            'email' => $centralEmail,
-        ]);
-        $superAdmin->id = 0;
-
-        // For central auth, we use a simple token approach
-        $token = base64_encode($centralEmail . ':' . now()->timestamp . ':' . \Illuminate\Support\Str::random(32));
-
-        // Store token in cache for validation
-        cache()->put('central_token:' . $token, true, now()->addHours(24));
-
-        return response()->json([
-            'message' => 'Login central exitoso',
-            'token' => $token,
-            'user' => [
-                'name' => 'Super Admin',
-                'email' => $centralEmail,
-                'role' => 'super_admin',
-            ],
-        ]);
     }
 }

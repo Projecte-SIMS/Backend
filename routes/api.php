@@ -27,8 +27,7 @@ Route::get('/health', function () {
 });
 
 // Central authentication for super admin (no domain restriction)
-Route::post('/central/login', [AuthController::class, 'centralLogin'])
-    ->middleware('throttle:login');
+Route::post('/central/login', [AuthController::class, 'centralLogin']);
 
 // Tenant management routes (protected with central admin middleware)
 Route::middleware('central.admin')->prefix('tenants')->group(function () {
