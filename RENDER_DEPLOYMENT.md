@@ -2,22 +2,24 @@
 
 ## Database Configuration
 
-### External vs Internal Database URLs
+### Internal vs External Database URLs
 
 In Render, there are two types of database URLs:
 
-- **Internal URL** (for services within Render): `dpg-d7b94pp4tr6s73be63b0-a` (no domain)
-- **External URL** (for external services): `dpg-d7b94pp4tr6s73be63b0-a.oregon-postgres.render.com`
+- **Internal URL** (for services within Render): `dpg-d7b94pp4tr6s73be63b0-a` - Use this for your app service
+- **External URL** (for external services): `dpg-d7b94pp4tr6s73be63b0-a.oregon-postgres.render.com` - Use this only for services outside Render
 
-The application running in Render should use the **External URL** because the app service and database service are separate services that communicate externally.
+Since both the app and database are services within Render, you should use the **Internal URL**.
 
 ### Current Configuration
 
 The `.env.production` file contains:
 
 ```env
-DB_URL=postgresql://admin_sims:aUh4gBVPMiIuTDavQDD4bTjFst3o2Nxf@dpg-d7b94pp4tr6s73be63b0-a.oregon-postgres.render.com/project_sims_backend_sdrf
+DB_URL=postgresql://admin_sims:aUh4gBVPMiIuTDavQDD4bTjFst3o2Nxf@dpg-d7b94pp4tr6s73be63b0-a/project_sims_backend_sdrf
 ```
+
+This is the internal URL used when both services are within Render.
 
 ## Fresh Database Migration
 
@@ -54,13 +56,13 @@ For regular deployments (without reset):
 
 **Error**: `could not translate host name`
 
-**Solution**: Verify you're using the External Database URL in `.env.production`:
+**Solution**: Verify you're using the Internal Database URL in `.env.production` (not the external one):
 ```
-// ✅ Correct (External)
-dpg-d7b94pp4tr6s73be63b0-a.oregon-postgres.render.com
-
-// ❌ Wrong (Internal, won't work for app service)
+// ✅ Correct (Internal - for Render services)
 dpg-d7b94pp4tr6s73be63b0-a
+
+// ❌ Wrong (External - only for services outside Render)
+dpg-d7b94pp4tr6s73be63b0-a.oregon-postgres.render.com
 ```
 
 ### Migration Failures
