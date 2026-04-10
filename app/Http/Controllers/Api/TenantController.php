@@ -296,6 +296,73 @@ class TenantController extends Controller
     }
 
     /**
+     * Verify tenant status - check if schema exists and is accessible
+     */
+    public function verify(string $id)
+    {
+        $tenant = Tenant::find($id);
+
+        if (!$tenant) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tenant no encontrado',
+            ], 404);
+        }
+
+        try {
+            $tenancy = app(\Stancl\Tenancy\Tenancy::class);
+            $tenancy->initialize($tenant);
+
+            // Check if schema exists
+            $schemaName = 'tenant_' . $tenant->id;
+            $schemaExists = \DB::selectOne(
+                "SELECT 1 FROM information_schema.schemata WHERE schema_name = ?",
+                [$schemaName]
+            );
+
+            // Try to query tables in the schema
+            $tables = [];
+            $tableCount = 0;
+            if ($schemaExists) {
+                $tables = \DB::select(
+                    "SELECT table_name FROM information_schema.tables WHERE table_schema = ?",
+                    [$schemaName]
+                );
+                $tableCount = count($tables);
+            }
+
+            $usersCount = 0;
+            if ($tableCount > 0) {
+                try {
+                    $usersCount = \DB::connection('tenant')
+                        ->table('users')
+                        ->count();
+                } catch (\Exception $e) {
+                    // Ignore error
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'tenant_id' => $tenant->id,
+                    'schema_name' => $schemaName,
+                    'schema_exists' => (bool) $schemaExists,
+                    'table_count' => $tableCount,
+                    'users_count' => $usersCount,
+                    'tables' => collect($tables)->pluck('table_name')->toArray(),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error verificando tenant',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Delete a tenant and its database
      */
     public function destroy(string $id)

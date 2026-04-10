@@ -34,6 +34,7 @@ Route::middleware('central.admin')->prefix('tenants')->group(function () {
     Route::get('/', [TenantController::class, 'index']);
     Route::post('/', [TenantController::class, 'store']);
     Route::get('/{id}', [TenantController::class, 'show']);
+    Route::get('/{id}/verify', [TenantController::class, 'verify']);
     Route::post('/{id}/domains', [TenantController::class, 'addDomain']);
     Route::post('/{id}/reset-password', [TenantController::class, 'resetAdminPassword']);
     Route::delete('/{id}', [TenantController::class, 'destroy']);
