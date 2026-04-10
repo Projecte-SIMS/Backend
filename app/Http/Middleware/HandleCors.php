@@ -4,36 +4,40 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Fruitcake\Cors\CorsService;
+use Illuminate\Http\Response;
 
 class HandleCors
 {
-    protected $cors;
-
-    public function __construct(CorsService $cors)
-    {
-        $this->cors = $cors;
-    }
-
     public function handle(Request $request, Closure $next)
     {
-        if ($this->cors->isCorsRequest($request)) {
-            if ($this->cors->isPreflightRequest($request)) {
-                return $this->handlePreflightRequest($request);
+        $allowedOrigins = config('cors.allowed_origins', []);
+        $origin = $request->header('Origin');
+
+        // Handle preflight requests
+        if ($request->method() === 'OPTIONS') {
+            $response = new Response('', 200);
+            
+            if (in_array($origin, $allowedOrigins) || in_array('*', $allowedOrigins)) {
+                $response->header('Access-Control-Allow-Origin', $origin ?: '*');
+                $response->header('Access-Control-Allow-Credentials', 'true');
+                $response->header('Access-Control-Allow-Methods', implode(', ', config('cors.allowed_methods', ['*'])));
+                $response->header('Access-Control-Allow-Headers', implode(', ', config('cors.allowed_headers', ['*'])));
+                $response->header('Access-Control-Max-Age', config('cors.max_age', 0));
             }
+            
+            return $response;
         }
 
+        // Process the actual request
         $response = $next($request);
 
-        if ($this->cors->isCorsRequest($request)) {
-            return $this->cors->addActualRequestHeaders($response, $request);
+        // Add CORS headers to actual responses
+        if (in_array($origin, $allowedOrigins) || in_array('*', $allowedOrigins)) {
+            $response->header('Access-Control-Allow-Origin', $origin ?: '*');
+            $response->header('Access-Control-Allow-Credentials', 'true');
+            $response->header('Vary', 'Origin');
         }
 
         return $response;
-    }
-
-    protected function handlePreflightRequest(Request $request)
-    {
-        return $this->cors->handlePreflightRequest(request());
     }
 }

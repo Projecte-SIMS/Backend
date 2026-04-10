@@ -11,9 +11,6 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withProviders([
-        \App\Providers\CorsServiceProvider::class,
-    ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
@@ -26,7 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Trust proxies for Render/Vercel
         $middleware->trustProxies(at: '*');
         
-        // CORS middleware must be first to process preflight requests
+        // CORS middleware must be first to process preflight requests and add headers to all responses
         $middleware->prepend(\App\Http\Middleware\HandleCors::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
