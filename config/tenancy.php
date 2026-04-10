@@ -19,8 +19,8 @@ return [
     'central_domains' => array_filter([
         '127.0.0.1',
         'localhost',
-        env('CENTRAL_DOMAIN'), // e.g., sims-backend-api.onrender.com
-    ]),
+        env('CENTRAL_DOMAIN'), // e.g., sims-backend-api-0b2w.onrender.com
+    ], fn($domain) => !empty($domain)), // Only filter out null/empty strings
 
     /**
      * Tenancy bootstrappers are executed when tenancy is initialized.
