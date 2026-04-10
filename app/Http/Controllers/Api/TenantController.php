@@ -125,10 +125,24 @@ class TenantController extends Controller
                 
                 \Log::info('Running seeder for tenant', ['tenant_id' => tenant('id')]);
                 try {
-                    // Inline seeding to avoid autoloader issues
+                    // Load seeders using direct class loading
+                    $seederPath = database_path('seeders');
+                    
+                    // 1. Run PermissionsSeeder
+                    require_once $seederPath . '/PermissionsSeeder.php';
+                    $permSeeder = new \Database\Seeders\PermissionsSeeder();
+                    $permSeeder->run();
+                    \Log::info('Permissions seeded');
+                    
+                    // 2. Run RolesSeeder
+                    require_once $seederPath . '/RolesSeeder.php';
+                    $roleSeeder = new \Database\Seeders\RolesSeeder();
+                    $roleSeeder->run();
+                    \Log::info('Roles seeded');
+                    
+                    // 3. Create users and assign roles
                     $password = Hash::make('password');
                     
-                    // Create ADMIN
                     $admin = User::firstOrCreate(
                         ['email' => 'admin@sims.com'],
                         [
@@ -142,7 +156,6 @@ class TenantController extends Controller
                         $admin->assignRole('Admin');
                     }
                     
-                    // Create CLIENT
                     $client = User::firstOrCreate(
                         ['email' => 'client@sims.com'],
                         [
@@ -156,7 +169,6 @@ class TenantController extends Controller
                         $client->assignRole('Client');
                     }
                     
-                    // Create MAINTENANCE
                     $maintenance = User::firstOrCreate(
                         ['email' => 'maint@sims.com'],
                         [
@@ -171,6 +183,16 @@ class TenantController extends Controller
                     }
                     
                     \Log::info('Users seeded for tenant');
+                    
+                    // 4. Run TestDataSeeder if available
+                    $testDataPath = $seederPath . '/TestDataSeeder.php';
+                    if (file_exists($testDataPath)) {
+                        require_once $testDataPath;
+                        $testSeeder = new \Database\Seeders\TestDataSeeder();
+                        $testSeeder->run();
+                        \Log::info('Test data seeded');
+                    }
+                    
                 } catch (\Exception $e) {
                     \Log::warning('Seeding warning (non-critical): ' . $e->getMessage());
                 }
