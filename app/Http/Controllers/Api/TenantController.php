@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Models\User;
-use Database\Seeders\Tenant\TenantDatabaseSeeder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
@@ -125,8 +124,20 @@ class TenantController extends Controller
                 \Log::info('Migrations completed');
                 
                 \Log::info('Running seeder for tenant', ['tenant_id' => tenant('id')]);
-                $seeder = new TenantDatabaseSeeder();
-                $seeder->run();
+                try {
+                    // Load seeder file directly to avoid autoloader issues
+                    $seederPath = database_path('seeders/Tenant/TenantDatabaseSeeder.php');
+                    if (file_exists($seederPath)) {
+                        require_once $seederPath;
+                        $seeder = new \Database\Seeders\Tenant\TenantDatabaseSeeder();
+                        $seeder->run();
+                    } else {
+                        \Log::warning('Seeder file not found at: ' . $seederPath);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Seeder error: ' . $e->getMessage());
+                    throw $e;
+                }
                 \Log::info('Seeding completed');
             });
             
