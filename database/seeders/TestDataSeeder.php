@@ -132,9 +132,11 @@ class TestDataSeeder extends Seeder
             ]
         );
 
-        echo "✅ Test data created (Terres de l'Ebre)!\n";
-        echo "   8 vehicles (all available)\n";
-        echo "   3 tickets\n";
-        echo "   3 historical reservations (no active)\n";
+        \Log::info('Test data created', [
+            'region' => 'Terres de l\'Ebre',
+            'vehicles' => 8,
+            'tickets' => 3,
+            'reservations' => 3,
+        ]);
     }
 }

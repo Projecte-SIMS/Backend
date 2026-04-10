@@ -111,13 +111,17 @@ class MongoVehicleLocationsSeeder extends Seeder
                 $success++;
             }
             
-            echo "✅ MongoDB vehicle locations seeded directly (Terres de l'Ebre)\n";
-            echo "   {$success} vehicles created (all available)\n";
+            \Log::info('MongoDB vehicle locations seeded', [
+                'region' => 'Terres de l\'Ebre',
+                'vehicles' => $success,
+                'status' => 'all available',
+            ]);
             
         } catch (\Exception $e) {
-            echo "⚠️  MongoDB connection failed ({$mongoUri})\n";
-            echo "   Error: " . $e->getMessage() . "\n";
-            echo "   Make sure MongoDB is running and accessible.\n";
+            \Log::warning('MongoDB connection failed', [
+                'uri' => $mongoUri,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 }

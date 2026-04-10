@@ -28,7 +28,7 @@ class TenantDatabaseSeeder extends Seeder
                 RolesSeeder::class,
             ]);
         } catch (\Exception $e) {
-            echo "⚠️ Permissions/Roles seeder error: " . $e->getMessage() . "\n";
+            \Log::warning('Permissions/Roles seeder error: ' . $e->getMessage());
         }
 
         $password = Hash::make('password');
@@ -45,9 +45,9 @@ class TenantDatabaseSeeder extends Seeder
                 ]
             );
             $admin->assignRole('Admin');
-            echo "✅ Admin user created\n";
+            \Log::info('Admin user created');
         } catch (\Exception $e) {
-            echo "⚠️ Admin user error: " . $e->getMessage() . "\n";
+            \Log::warning('Admin user error: ' . $e->getMessage());
         }
 
         // 3. Crear CLIENTE
@@ -62,9 +62,9 @@ class TenantDatabaseSeeder extends Seeder
                 ]
             );
             $client->assignRole('Client');
-            echo "✅ Client user created\n";
+            \Log::info('Client user created');
         } catch (\Exception $e) {
-            echo "⚠️ Client user error: " . $e->getMessage() . "\n";
+            \Log::warning('Client user error: ' . $e->getMessage());
         }
 
         // 4. Crear MANTENIMIENTO
@@ -79,9 +79,9 @@ class TenantDatabaseSeeder extends Seeder
                 ]
             );
             $maintenance->assignRole('Maintenance');
-            echo "✅ Maintenance user created\n";
+            \Log::info('Maintenance user created');
         } catch (\Exception $e) {
-            echo "⚠️ Maintenance user error: " . $e->getMessage() . "\n";
+            \Log::warning('Maintenance user error: ' . $e->getMessage());
         }
 
         // 5. Crear datos de prueba
@@ -90,7 +90,7 @@ class TenantDatabaseSeeder extends Seeder
                 TestDataSeeder::class,
             ]);
         } catch (\Exception $e) {
-            echo "⚠️ Test data seeder error: " . $e->getMessage() . "\n";
+            \Log::warning('Test data seeder error: ' . $e->getMessage());
         }
 
         // 6. Crear ubicaciones de vehículos (MongoDB) - skip if not available
@@ -99,9 +99,9 @@ class TenantDatabaseSeeder extends Seeder
                 MongoVehicleLocationsSeeder::class,
             ]);
         } catch (\Exception $e) {
-            echo "⚠️ MongoDB seeder skipped: " . $e->getMessage() . "\n";
+            \Log::warning('MongoDB seeder skipped: ' . $e->getMessage());
         }
 
-        echo "\n🚀 Tenant Database seeded!\n";
+        \Log::info('Tenant Database seeded!');
     }
 }

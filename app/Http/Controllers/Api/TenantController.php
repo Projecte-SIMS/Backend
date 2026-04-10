@@ -110,6 +110,7 @@ class TenantController extends Controller
                     '--path' => 'database/migrations/tenant',
                     '--force' => true,
                     '--database' => 'tenant',
+                    '--quiet' => true,
                 ]);
                 \Log::info('Migrations completed');
                 
@@ -117,6 +118,7 @@ class TenantController extends Controller
                 \Artisan::call('db:seed', [
                     '--class' => 'Database\\Seeders\\Tenant\\TenantDatabaseSeeder',
                     '--force' => true,
+                    '--quiet' => true,
                 ]);
                 \Log::info('Seeding completed');
             });
