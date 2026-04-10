@@ -92,7 +92,16 @@ class TenantController extends Controller
         try {
             \Log::info('Creating tenant', ['id' => $request->id, 'domain' => $request->domain]);
             
-            // Create tenant - creates the schema
+            // Clean up: Drop schema if it exists from a previous failed attempt
+            $schemaName = 'tenant_' . $request->id;
+            try {
+                \DB::statement("DROP SCHEMA IF EXISTS \"$schemaName\" CASCADE");
+                \Log::info('Dropped existing schema', ['schema' => $schemaName]);
+            } catch (\Exception $e) {
+                \Log::warning('Could not drop schema', ['schema' => $schemaName, 'error' => $e->getMessage()]);
+            }
+            
+            // Create tenant - creates the schema fresh
             $tenant = Tenant::create(['id' => $request->id]);
             
             \Log::info('Tenant created successfully', ['id' => $tenant->id]);
@@ -377,13 +386,28 @@ class TenantController extends Controller
         }
 
         try {
+            \Log::info('Deleting tenant', ['id' => $id]);
+            
+            // Explicitly drop schema first
+            $schemaName = 'tenant_' . $id;
+            try {
+                \DB::statement("DROP SCHEMA IF EXISTS \"$schemaName\" CASCADE");
+                \Log::info('Dropped schema', ['schema' => $schemaName]);
+            } catch (\Exception $e) {
+                \Log::warning('Could not drop schema', ['schema' => $schemaName, 'error' => $e->getMessage()]);
+            }
+            
+            // Delete tenant record from central database
             $tenant->delete();
+            
+            \Log::info('Tenant deleted successfully', ['id' => $id]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Tenant eliminado exitosamente',
             ]);
         } catch (\Exception $e) {
+            \Log::error('Error deleting tenant', ['id' => $id, 'error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al eliminar el tenant',
