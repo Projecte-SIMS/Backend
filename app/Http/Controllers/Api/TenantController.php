@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Models\User;
+use Database\Seeders\Tenant\TenantDatabaseSeeder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
@@ -124,11 +125,8 @@ class TenantController extends Controller
                 \Log::info('Migrations completed');
                 
                 \Log::info('Running seeder for tenant', ['tenant_id' => tenant('id')]);
-                \Artisan::call('db:seed', [
-                    '--class' => 'Database\\Seeders\\Tenant\\TenantDatabaseSeeder',
-                    '--force' => true,
-                    '--quiet' => true,
-                ]);
+                $seeder = new TenantDatabaseSeeder();
+                $seeder->run();
                 \Log::info('Seeding completed');
             });
             
