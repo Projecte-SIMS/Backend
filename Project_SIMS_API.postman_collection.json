@@ -1,0 +1,295 @@
+{
+  "info": {
+    "_postman_id": "project-sims-api",
+    "name": "Project SIMS - API Collection",
+    "description": "Collection for testing Project SIMS Backend API locally",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "item": [
+        {
+          "name": "Login - Get Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('token', jsonData.token);",
+                  "    console.log('✅ Token guardado: ' + jsonData.token.substring(0, 30) + '...');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"superadmin@sims.com\",\n  \"password\": \"supersecret\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/central/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "central",
+                "login"
+              ]
+            },
+            "description": "Obtener token de autenticación para super admin"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "❤️ Health & Status",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            },
+            "description": "Verificar que la API está corriendo"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🏢 Tenants",
+      "item": [
+        {
+          "name": "List All Tenants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tenants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "tenants"
+              ]
+            },
+            "description": "Listar todos los tenants"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Tenant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('tenant_id', jsonData.data.id);",
+                  "    console.log('✅ Tenant creado: ' + jsonData.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"empresa-test\",\n  \"domain\": \"empresa-test.local\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "tenants"
+              ]
+            },
+            "description": "Crear un nuevo tenant. Cambiar 'id' y 'domain' por valores únicos"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tenant Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "tenants",
+                "{{tenant_id}}"
+              ]
+            },
+            "description": "Obtener detalles de un tenant específico"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Domain to Tenant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"domain\": \"empresa-test-alt.local\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/domains",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "tenants",
+                "{{tenant_id}}",
+                "domains"
+              ]
+            },
+            "description": "Agregar un dominio adicional a un tenant"
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Admin Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"newpassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}/reset-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "tenants",
+                "{{tenant_id}}",
+                "reset-password"
+              ]
+            },
+            "description": "Resetear la contraseña del admin de un tenant"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Tenant",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tenants/{{tenant_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "tenants",
+                "{{tenant_id}}"
+              ]
+            },
+            "description": "Eliminar un tenant y su base de datos"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string",
+      "description": "URL base de la API - Cambiar para Render: https://sims-backend-api-0b2w.onrender.com"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string",
+      "description": "Token JWT - Se obtiene automáticamente del login"
+    },
+    {
+      "key": "tenant_id",
+      "value": "",
+      "type": "string",
+      "description": "ID del tenant actual - Se guarda automáticamente al crear"
+    }
+  ]
+}
