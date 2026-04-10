@@ -455,12 +455,15 @@ class TenantController extends Controller
         try {
             \Log::info('Deleting tenant', ['id' => $id]);
             
-            // Explicitly drop schema first
+            // Explicitly drop schema first with better error handling
             $schemaName = 'tenant_' . $id;
             try {
+                // Set a lock timeout to avoid conflicts with concurrent deletes
+                \DB::statement("SET lock_timeout = '5s'");
                 \DB::statement("DROP SCHEMA IF EXISTS \"$schemaName\" CASCADE");
                 \Log::info('Dropped schema', ['schema' => $schemaName]);
             } catch (\Exception $e) {
+                // Log but don't fail - schema might already be deleted
                 \Log::warning('Could not drop schema', ['schema' => $schemaName, 'error' => $e->getMessage()]);
             }
             
