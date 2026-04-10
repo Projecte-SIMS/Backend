@@ -122,9 +122,10 @@ return [
 
     /**
      * Parameters used by the tenants:seed command.
+     * NOTE: We don't use this - seeding is done inline in TenantController
      */
     'seeder_parameters' => [
-        '--class' => 'Database\\Seeders\\Tenant\\TenantDatabaseSeeder',
-        '--force' => true,
+        // '--class' => 'Database\\Seeders\\Tenant\\TenantDatabaseSeeder',
+        // '--force' => true,
     ],
 ];
