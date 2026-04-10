@@ -41,7 +41,18 @@ class InitializeTenancyByRequestData
             ], 404);
         }
 
-        $this->tenancy->initialize($tenant);
+        try {
+            $this->tenancy->initialize($tenant);
+        } catch (\Exception $e) {
+            \Log::error('Tenancy initialization failed', [
+                'tenant_id' => $tenantId,
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al inicializar tenant: ' . $e->getMessage(),
+            ], 500);
+        }
 
         return $next($request);
     }

@@ -66,12 +66,25 @@ class TenantSanctumAuth
             auth()->setUser($userModel);
             
             return $next($request);
+        } catch (\PDOException $e) {
+            // Database connection error - likely schema doesn't exist
+            Log::error('TenantSanctumAuth - Database error', [
+                'error' => $e->getMessage(),
+                'tenant' => tenancy()->tenant->id ?? 'unknown',
+            ]);
+            return response()->json([
+                'message' => 'Tenant database error. Schema may not exist.',
+                'detail' => $e->getMessage()
+            ], 500);
         } catch (\Exception $e) {
             Log::error('TenantSanctumAuth error', [
                 'error' => $e->getMessage(),
                 'tenant' => tenancy()->tenant->id ?? 'unknown',
             ]);
-            return response()->json(['message' => 'Unauthenticated.'], 401);
+            return response()->json([
+                'message' => 'Authentication error',
+                'detail' => $e->getMessage()
+            ], 500);
         }
     }
 }
