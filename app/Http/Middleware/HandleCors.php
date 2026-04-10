@@ -13,6 +13,7 @@ class HandleCors
         $allowedOrigins = config('cors.allowed_origins', []);
         $origin = $request->header('Origin');
         $allowedHeaders = config('cors.allowed_headers', ['*']);
+        $allowedMethods = config('cors.allowed_methods', ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']);
 
         // Handle preflight requests
         if ($request->method() === 'OPTIONS') {
@@ -21,7 +22,12 @@ class HandleCors
             if (in_array($origin, $allowedOrigins) || in_array('*', $allowedOrigins)) {
                 $response->header('Access-Control-Allow-Origin', $origin ?: '*');
                 $response->header('Access-Control-Allow-Credentials', 'true');
-                $response->header('Access-Control-Allow-Methods', implode(', ', config('cors.allowed_methods', ['*'])));
+                
+                // Handle allowed methods - if '*', allow all common HTTP methods
+                $methodsHeader = in_array('*', $allowedMethods)
+                    ? 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD'
+                    : implode(', ', $allowedMethods);
+                $response->header('Access-Control-Allow-Methods', $methodsHeader);
                 
                 // Handle allowed headers - if '*', echo back the requested headers
                 if (in_array('*', $allowedHeaders)) {
