@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
 
 class TenantController extends Controller
@@ -91,10 +92,7 @@ class TenantController extends Controller
         try {
             \Log::info('Creating tenant', ['id' => $request->id, 'domain' => $request->domain]);
             
-            // Create tenant - this triggers automatic:
-            // 1. CreateDatabase (creates schema tenant_<id>)
-            // 2. MigrateDatabase (runs migrations from config tenancy.migration_parameters)
-            // 3. SeedDatabase (runs seeder from config tenancy.seeder_parameters)
+            // Create tenant - creates the schema
             $tenant = Tenant::create(['id' => $request->id]);
             
             \Log::info('Tenant created successfully', ['id' => $tenant->id]);
@@ -103,6 +101,25 @@ class TenantController extends Controller
             $tenant->domains()->create(['domain' => $request->domain]);
             
             \Log::info('Domain created', ['domain' => $request->domain, 'tenant_id' => $tenant->id]);
+            
+            // Run migrations and seeding inside tenant context
+            $tenant->run(function () {
+                \Log::info('Running migrations for tenant', ['tenant_id' => tenant('id')]);
+                // Run migrations using Artisan within tenant context, specifying tenant migrations path
+                \Artisan::call('migrate', [
+                    '--path' => 'database/migrations/tenant',
+                    '--force' => true,
+                    '--database' => 'tenant',
+                ]);
+                \Log::info('Migrations completed');
+                
+                \Log::info('Running seeder for tenant', ['tenant_id' => tenant('id')]);
+                \Artisan::call('db:seed', [
+                    '--class' => 'Database\\Seeders\\Tenant\\TenantDatabaseSeeder',
+                    '--force' => true,
+                ]);
+                \Log::info('Seeding completed');
+            });
             
             // Verify tables were created by checking if users table exists
             $tablesCreated = false;
