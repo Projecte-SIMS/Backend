@@ -107,10 +107,12 @@ class AuthController extends Controller
                 'password' => 'required',
             ]);
 
-            $centralEmail = env('CENTRAL_ADMIN_EMAIL', 'superadmin@sims.com');
-            $centralPassword = env('CENTRAL_ADMIN_PASSWORD', 'supersecret');
+            $centralEmail = trim((string) env('CENTRAL_ADMIN_EMAIL', 'superadmin@sims.com'));
+            $centralPassword = trim((string) env('CENTRAL_ADMIN_PASSWORD', 'supersecret'));
+            $inputEmail = trim((string) $validated['email']);
+            $inputPassword = trim((string) $validated['password']);
 
-            if ($validated['email'] !== $centralEmail || $validated['password'] !== $centralPassword) {
+            if ($inputEmail !== $centralEmail || $inputPassword !== $centralPassword) {
                 throw ValidationException::withMessages([
                     'email' => ['Credenciales incorrectas.'],
                 ]);

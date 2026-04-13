@@ -48,4 +48,12 @@ return [
         'model' => env('OPEN_WEBUI_MODEL', 'llm-per-a-alumnat'),
     ],
 
+    'stripe' => [
+        'secret' => env('STRIPE_SECRET_KEY'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'default_price_id' => env('STRIPE_DEFAULT_PRICE_ID'),
+        'base_url' => env('STRIPE_API_BASE_URL', 'https://api.stripe.com/v1'),
+        'demo_mode' => env('STRIPE_DEMO_MODE', false),
+    ],
+
 ];

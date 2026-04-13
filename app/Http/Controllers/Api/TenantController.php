@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Billing\TenantBillingAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
@@ -13,6 +14,10 @@ use Illuminate\Support\Str;
 
 class TenantController extends Controller
 {
+    public function __construct(private readonly TenantBillingAccessService $billingAccessService)
+    {
+    }
+
     /**
      * List all tenants with admin info
      */
@@ -33,6 +38,7 @@ class TenantController extends Controller
                     'admin_username' => $adminInfo['username'] ?? 'admin',
                     'created_at' => $tenant->created_at,
                     'updated_at' => $tenant->updated_at,
+                    'billing' => $this->buildBillingSummary($tenant),
                 ];
             }),
         ]);
@@ -286,8 +292,33 @@ class TenantController extends Controller
                 'admin_name' => $adminInfo['name'],
                 'created_at' => $tenant->created_at,
                 'updated_at' => $tenant->updated_at,
+                'billing' => $this->buildBillingSummary($tenant),
             ],
         ]);
+    }
+
+    private function buildBillingSummary(Tenant $tenant): array
+    {
+        $monthlyCents = (int) ($tenant->billing_monthly_amount_cents ?? 0);
+        $profileAttribute = $tenant->getAttribute('billing_demo_profile');
+        $demoProfile = is_array($profileAttribute) ? $profileAttribute : null;
+
+        return [
+            'provider' => $tenant->billing_provider,
+            'status' => $tenant->billing_status ?? 'inactive',
+            'customer_id' => $tenant->billing_customer_id,
+            'subscription_id' => $tenant->billing_subscription_id,
+            'price_id' => $tenant->billing_price_id,
+            'currency' => strtoupper((string) ($tenant->billing_currency ?? 'EUR')),
+            'monthly_amount_cents' => $monthlyCents,
+            'mrr_amount_cents' => $monthlyCents,
+            'arr_amount_cents' => $monthlyCents * 12,
+            'current_period_end' => $tenant->billing_current_period_end,
+            'last_invoice_at' => $tenant->billing_last_invoice_at,
+            'last_invoice_status' => $tenant->billing_last_invoice_status,
+            'demo_profile' => $demoProfile,
+            'access' => $this->billingAccessService->suspensionSnapshot($tenant),
+        ];
     }
 
     /**

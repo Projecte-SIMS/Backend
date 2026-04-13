@@ -18,6 +18,16 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     {
         return [
             'id',
+            'billing_provider',
+            'billing_status',
+            'billing_customer_id',
+            'billing_subscription_id',
+            'billing_price_id',
+            'billing_currency',
+            'billing_monthly_amount_cents',
+            'billing_current_period_end',
+            'billing_last_invoice_at',
+            'billing_last_invoice_status',
             'data',
         ];
     }

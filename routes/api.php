@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BillingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,6 +29,7 @@ Route::get('/health', function () {
 
 // Central authentication for super admin (no domain restriction)
 Route::post('/central/login', [AuthController::class, 'centralLogin']);
+Route::post('/central/billing/webhook/stripe', [BillingController::class, 'stripeWebhook']);
 
 // Tenant management routes (protected with central admin middleware)
 Route::middleware('central.admin')->prefix('tenants')->group(function () {
@@ -37,5 +39,9 @@ Route::middleware('central.admin')->prefix('tenants')->group(function () {
     Route::get('/{id}/verify', [TenantController::class, 'verify']);
     Route::post('/{id}/domains', [TenantController::class, 'addDomain']);
     Route::post('/{id}/reset-password', [TenantController::class, 'resetAdminPassword']);
+    Route::get('/{id}/billing/status', [BillingController::class, 'status']);
+    Route::post('/{id}/billing/checkout-session', [BillingController::class, 'checkoutSession']);
+    Route::post('/{id}/billing/portal-session', [BillingController::class, 'portalSession']);
+    Route::post('/{id}/billing/demo-profile', [BillingController::class, 'updateDemoProfile']);
     Route::delete('/{id}', [TenantController::class, 'destroy']);
 });
