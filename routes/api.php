@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BillingController;
+use App\Http\Controllers\Api\PublicTenantOnboardingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,6 +31,8 @@ Route::get('/health', function () {
 // Central authentication for super admin (no domain restriction)
 Route::post('/central/login', [AuthController::class, 'centralLogin']);
 Route::post('/central/billing/webhook/stripe', [BillingController::class, 'stripeWebhook']);
+Route::post('/public/tenant-onboarding/demo-complete', [PublicTenantOnboardingController::class, 'demoComplete'])
+    ->middleware('throttle:30,1');
 
 // Tenant management routes (protected with central admin middleware)
 Route::middleware('central.admin')->prefix('tenants')->group(function () {

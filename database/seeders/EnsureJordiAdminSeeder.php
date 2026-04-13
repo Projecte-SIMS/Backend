@@ -34,7 +34,5 @@ class EnsureJordiAdminSeeder extends Seeder
 
         $user->active = true;
         $user->save();
-
-        echo "✅ Admin user jordi@sims.com ensured\n";
     }
 }
