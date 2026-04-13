@@ -4,9 +4,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="SIMS - Sistema Inteligente de Movilidad Sostenible. Gestión de flotas de vehículos eléctricos con IoT en tiempo real.">
+    <meta name="description" content="Fleetly - Sistema Inteligente de Movilidad Sostenible. Gestión de flotas de vehículos eléctricos con IoT en tiempo real.">
 
-    <title>SIMS - Sistema Inteligente de Movilidad Sostenible</title>
+    <title>Fleetly - Sistema Inteligente de Movilidad Sostenible</title>
+    <link rel="icon" type="image/svg+xml" href="/brand/isotipo/fleetly_isotip_negre.svg">
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800,900" rel="stylesheet" />
@@ -32,9 +33,9 @@
         <div class="mx-auto max-w-7xl px-6 lg:px-8 flex items-center justify-between h-16">
             <div class="flex items-center gap-3">
                 <div class="h-10 w-10 rounded-2xl bg-white p-1 shadow-xl shadow-indigo-500/30">
-                    <img src="/logo.png" alt="SIMS Logo" class="h-full w-full object-contain" />
+                    <img src="/logo.png" alt="Fleetly Logo" class="h-full w-full object-contain" />
                 </div>
-                <span class="text-xl font-bold text-white">SIMS</span>
+                <span class="text-xl font-bold text-white">Fleetly</span>
             </div>
             <div class="flex items-center gap-6">
                 <a href="#caracteristicas" class="hidden sm:block text-sm font-medium text-gray-400 hover:text-white transition-colors">Características</a>
@@ -115,7 +116,7 @@
                                     <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
                                 </div>
                                 <img src="https://tailwindcss.com/plus-assets/img/component-images/project-app-screenshot.png" 
-                                     alt="Panel de Control SIMS" 
+                                     alt="Panel de Control Fleetly" 
                                      class="w-full" />
                             </div>
                         </div>
@@ -302,9 +303,9 @@
             <div class="flex flex-col md:flex-row items-center justify-between gap-6">
                 <div class="flex items-center gap-3">
                     <div class="h-10 w-10 rounded-2xl bg-white p-1 shadow-lg shadow-indigo-500/30">
-                        <img src="/logo.png" alt="SIMS Logo" class="h-full w-full object-contain" />
+                        <img src="/logo.png" alt="Fleetly Logo" class="h-full w-full object-contain" />
                     </div>
-                    <span class="text-xl font-bold text-white">SIMS</span>
+                    <span class="text-xl font-bold text-white">Fleetly</span>
                 </div>
                 
                 <div class="flex items-center gap-6">
@@ -317,7 +318,7 @@
                 </div>
                 
                 <p class="text-sm text-gray-500 font-medium">
-                    &copy; 2026 SIMS Project. Licencia EUPL.
+                    &copy; 2026 Fleetly Project. Licencia EUPL.
                 </p>
             </div>
         </div>
