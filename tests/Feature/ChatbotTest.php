@@ -85,6 +85,12 @@ class ChatbotTest extends TestCase
 
     public function test_chatbot_returns_error_when_not_configured(): void
     {
+        putenv('OPEN_WEBUI_API_KEY=');
+        putenv('OPEN_WEBUI_BASE_URL=');
+        putenv('OPEN_WEBUI_MODEL=');
+        unset($_ENV['OPEN_WEBUI_API_KEY'], $_ENV['OPEN_WEBUI_BASE_URL'], $_ENV['OPEN_WEBUI_MODEL']);
+        unset($_SERVER['OPEN_WEBUI_API_KEY'], $_SERVER['OPEN_WEBUI_BASE_URL'], $_SERVER['OPEN_WEBUI_MODEL']);
+
         // Without proper env configuration, should return error
         $response = $this->withHeader('Authorization', "Bearer {$this->clientToken}")
                          ->postJson('/api/chatbot/chat', [

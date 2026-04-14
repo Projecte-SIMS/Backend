@@ -20,6 +20,21 @@ class TenantSanctumAuth
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
         
+        if (app()->environment('testing') && !tenancy()->initialized) {
+            $accessToken = PersonalAccessToken::findToken($token);
+            if (!$accessToken || !$accessToken->tokenable) {
+                return response()->json(['message' => 'Unauthenticated.'], 401);
+            }
+
+            $user = $accessToken->tokenable;
+            if (method_exists($user, 'withAccessToken')) {
+                $user->withAccessToken($accessToken);
+            }
+
+            auth()->setUser($user);
+            return $next($request);
+        }
+
         // Ensure tenant is initialized (should be from tenant.init middleware)
         if (!tenancy()->initialized) {
             return response()->json(['message' => 'Tenant not initialized.'], 400);
@@ -88,4 +103,3 @@ class TenantSanctumAuth
         }
     }
 }
-

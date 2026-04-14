@@ -33,7 +33,7 @@ return [
 
         // Central connection for multi-tenancy (same as default but explicit)
         'central' => [
-            'driver' => 'pgsql',
+            'driver' => env('CENTRAL_DB_CONNECTION', env('DB_CONNECTION', 'pgsql')),
             'url' => env('DB_URL'),
             'host' => env('DB_HOST_DOCKER', env('DB_HOST', '127.0.0.1')),
             'port' => env('DB_PORT', '5432'),
