@@ -159,7 +159,11 @@ class StripeBillingService
 
     public function updateDemoPaymentProfile(Tenant $tenant, array $profile): void
     {
-        if (!$this->isDemoMode() && !app()->environment(['local', 'development'])) {
+        $canUseDemoProfileUpdate = $this->isDemoMode()
+            || app()->environment(['local', 'development'])
+            || !$this->isConfigured();
+
+        if (!$canUseDemoProfileUpdate) {
             throw new RuntimeException('La actualización manual solo está disponible en modo demo.');
         }
 
