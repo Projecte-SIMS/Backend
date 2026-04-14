@@ -2,10 +2,14 @@
 
 use Illuminate\Support\Facades\Route;
 
-foreach (config('tenancy.central_domains') as $domain) {
-    Route::domain($domain)->group(function () {
-        Route::get('/', function () {
-            return view('welcome');
-        });
-    });
-}
+Route::get('/', function () {
+    $landingPath = resource_path('views/welcome.blade.php');
+
+    if (is_file($landingPath)) {
+        return response()->file($landingPath, ['Content-Type' => 'text/html; charset=UTF-8']);
+    }
+
+    return response('<h1>Fleetly backend</h1><p>Landing no disponible.</p>', 200, [
+        'Content-Type' => 'text/html; charset=UTF-8',
+    ]);
+});
