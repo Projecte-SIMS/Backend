@@ -50,7 +50,7 @@ class TenantController extends Controller
     {
         $cacheKey = "tenant_stats_{$tenant->id}";
         
-        return \Cache::remember($cacheKey, 300, function () use ($tenant) {
+        return \Cache::remember($cacheKey, 10, function () use ($tenant) {
             $stats = [
                 'vehicles_count' => 0,
                 'reservations_count' => 0,
@@ -59,12 +59,13 @@ class TenantController extends Controller
 
             try {
                 $tenant->run(function () use (&$stats) {
-                    $stats['vehicles_count'] = \App\Models\Vehicle::count();
-                    $stats['reservations_count'] = \App\Models\Reservation::count();
-                    $stats['tickets_count'] = \App\Models\Ticket::count();
+                    // Use explicit connection to avoid issues
+                    $stats['vehicles_count'] = \DB::connection('tenant')->table('vehicles')->whereNull('deleted_at')->count();
+                    $stats['reservations_count'] = \DB::connection('tenant')->table('reservations')->whereNull('deleted_at')->count();
+                    $stats['tickets_count'] = \DB::connection('tenant')->table('tickets')->whereNull('deleted_at')->count();
                 });
             } catch (\Exception $e) {
-                // Probably schema not initialized yet
+                // Probably schema not initialized yet or tables missing
                 \Log::warning("Could not get stats for tenant {$tenant->id}: " . $e->getMessage());
             }
 
