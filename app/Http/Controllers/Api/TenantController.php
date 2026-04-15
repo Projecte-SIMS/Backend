@@ -130,16 +130,74 @@ class TenantController extends Controller
                 ]);
                 \Log::info('Migrations completed');
                 
-                \Log::info('Running seeder for tenant', ['tenant_id' => tenant('id')]);
+                \Log::info('Running manual seeding for tenant', ['tenant_id' => tenant('id')]);
                 try {
-                    \Artisan::call('db:seed', [
-                        '--class' => 'Database\\Seeders\\Tenant\\TenantDatabaseSeeder',
-                        '--force' => true,
-                    ]);
-                    \Log::info('Seeding completed via Artisan');
+                    $seederPath = database_path('seeders');
+                    $password = \Hash::make('password');
+                    
+                    // 1. Permissions
+                    require_once $seederPath . '/PermissionsSeeder.php';
+                    (new \Database\Seeders\PermissionsSeeder())->run();
+                    \Log::info('Permissions seeded');
+                    
+                    // 2. Roles
+                    require_once $seederPath . '/RolesSeeder.php';
+                    (new \Database\Seeders\RolesSeeder())->run();
+                    \Log::info('Roles seeded');
+                    
+                    // 3. Users
+                    $admin = \App\Models\User::firstOrCreate(
+                        ['email' => 'admin@sims.com'],
+                        [
+                            'name' => 'Administrador',
+                            'username' => 'admin',
+                            'password' => $password,
+                            'active' => true,
+                        ]
+                    );
+                    $admin->assignRole('Admin');
+                    
+                    $client = \App\Models\User::firstOrCreate(
+                        ['email' => 'client@sims.com'],
+                        [
+                            'name' => 'Cliente Demo',
+                            'username' => 'client',
+                            'password' => $password,
+                            'active' => true,
+                        ]
+                    );
+                    $client->assignRole('Client');
+                    
+                    $maintenance = \App\Models\User::firstOrCreate(
+                        ['email' => 'maint@sims.com'],
+                        [
+                            'name' => 'Técnico Mantenimiento',
+                            'username' => 'maintenance',
+                            'password' => $password,
+                            'active' => true,
+                        ]
+                    );
+                    $maintenance->assignRole('Maintenance');
+                    \Log::info('Default users seeded');
+                    
+                    // 4. Test Data
+                    if (file_exists($seederPath . '/TestDataSeeder.php')) {
+                        require_once $seederPath . '/TestDataSeeder.php';
+                        (new \Database\Seeders\TestDataSeeder())->run();
+                        \Log::info('Test data seeded');
+                    }
+
+                    // 5. MongoDB Locations
+                    if (file_exists($seederPath . '/MongoVehicleLocationsSeeder.php')) {
+                        require_once $seederPath . '/MongoVehicleLocationsSeeder.php';
+                        (new \Database\Seeders\MongoVehicleLocationsSeeder())->run();
+                        \Log::info('MongoDB locations seeded');
+                    }
+                    
                 } catch (\Exception $e) {
                     \Log::warning('Seeding warning (non-critical): ' . $e->getMessage());
                 }
+                \Log::info('Seeding completed');
             });
             
             // Verify tables were created by checking if users table exists
