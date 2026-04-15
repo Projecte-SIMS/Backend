@@ -102,6 +102,10 @@ class TenancyServiceProvider extends ServiceProvider
         $this->bootEvents();
         $this->mapRoutes();
 
+        // Configure identification by request data (headers/query)
+        Middleware\InitializeTenancyByRequestData::$header = 'X-Tenant';
+        Middleware\InitializeTenancyByRequestData::$queryParameter = 'tenant';
+
         // Don't make tenancy middleware highest priority if it's a central API route
         $this->makeTenancyMiddlewareHighestPriority();
     }

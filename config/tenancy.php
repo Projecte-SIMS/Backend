@@ -112,6 +112,15 @@ return [
     'routes' => true,
 
     /**
+     * Identification parameters.
+     */
+    'identification' => [
+        'request_data' => [
+            'tenant_key' => 'X-Tenant', // Header name
+        ],
+    ],
+
+    /**
      * Parameters used by the tenants:migrate command.
      */
     'migration_parameters' => [

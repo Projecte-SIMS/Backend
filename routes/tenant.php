@@ -126,13 +126,19 @@ Route::middleware([
             Route::put('tickets/{ticket}', [TicketController::class, 'update']);
             Route::delete('tickets/{ticket}', [TicketController::class, 'destroy']);
             Route::post('tickets/{ticket}/messages', [TicketMessageController::class, 'store']);
-            // Reservations
-            Route::get('reservations', [AdminReservationController::class, 'index'])->name('reservations.index');
-            Route::post('reservations', [AdminReservationController::class, 'store'])->name('reservations.store');
-            Route::get('reservations/{id}', [AdminReservationController::class, 'show'])->name('reservations.show');
-            Route::put('reservations/{id}', [AdminReservationController::class, 'update'])->name('reservations.update');
-            Route::delete('reservations/{id}', [AdminReservationController::class, 'destroy'])->name('reservations.destroy');
-            Route::post('reservations/{id}/force-finish', [AdminReservationController::class, 'forceFinish'])->name('reservations.forceFinish');
+            // Bookings (Admin)
+            Route::get('bookings', [AdminReservationController::class, 'index'])->name('bookings.index');
+            Route::post('bookings', [AdminReservationController::class, 'store'])->name('bookings.store');
+            Route::get('bookings/{id}', [AdminReservationController::class, 'show'])->name('bookings.show');
+            Route::put('bookings/{id}', [AdminReservationController::class, 'update'])->name('bookings.update');
+            Route::delete('bookings/{id}', [AdminReservationController::class, 'destroy'])->name('bookings.destroy');
+            Route::post('bookings/{id}/force-finish', [AdminReservationController::class, 'forceFinish'])->name('bookings.forceFinish');
+
+            // Fallback for old reservations route
+            Route::any('reservations/{any?}', function($any = null) {
+                $newPath = str_replace('reservations', 'bookings', request()->path());
+                return redirect(url($newPath), 301);
+            })->where('any', '.*');
             
             // IoT Admin endpoints (solo admin)
             Route::get('iot/health', [IoTController::class, 'health']);
