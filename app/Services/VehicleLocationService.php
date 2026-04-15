@@ -65,9 +65,6 @@ class VehicleLocationService
                 $this->microserviceAvailable = false;
                 return [];
             }
-                $this->microserviceAvailable = false;
-                return [];
-            }
 
             $this->microserviceAvailable = true;
             $devices = $response->json();
