@@ -4,59 +4,45 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\Response;
 
 class HandleCors
 {
     public function handle(Request $request, Closure $next)
     {
-        $allowedOrigins = config('cors.allowed_origins', []);
-        $origin = $request->header('Origin');
-        $allowedHeaders = config('cors.allowed_headers', ['*']);
-        $allowedMethods = config('cors.allowed_methods', ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']);
+        $origin = $request->header('Origin') ?: '*';
 
-        // Handle preflight requests
-        if ($request->method() === 'OPTIONS') {
-            $response = new Response('', 200);
-            
-            if (in_array($origin, $allowedOrigins) || in_array('*', $allowedOrigins)) {
-                $response->header('Access-Control-Allow-Origin', $origin ?: '*');
-                $response->header('Access-Control-Allow-Credentials', 'true');
-                
-                // Handle allowed methods - if '*', allow all common HTTP methods
-                $methodsHeader = in_array('*', $allowedMethods)
-                    ? 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD'
-                    : implode(', ', $allowedMethods);
-                $response->header('Access-Control-Allow-Methods', $methodsHeader);
-                
-                // Handle allowed headers - if '*', echo back the requested headers
-                if (in_array('*', $allowedHeaders)) {
-                    $requestHeaders = $request->header('Access-Control-Request-Headers');
-                    if ($requestHeaders) {
-                        $response->header('Access-Control-Allow-Headers', $requestHeaders);
-                    } else {
-                        // Fallback to common headers
-                        $response->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Tenant, X-Requested-With');
-                    }
-                } else {
-                    $response->header('Access-Control-Allow-Headers', implode(', ', $allowedHeaders));
-                }
-                
-                $response->header('Access-Control-Max-Age', config('cors.max_age', 0));
-            }
-            
-            return $response;
+        // Manejo inmediato de peticiones OPTIONS (Preflight)
+        if ($request->isMethod('OPTIONS')) {
+            return response('', 200)
+                ->header('Access-Control-Allow-Origin', $origin)
+                ->header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, PUT, DELETE, PATCH')
+                ->header('Access-Control-Allow-Credentials', 'true')
+                ->header('Access-Control-Max-Age', '86400')
+                ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Tenant, Accept, Origin, Set-Cookie');
         }
 
-        // Process the actual request
-        $response = $next($request);
-
-        // Add CORS headers to actual responses
-        if (in_array($origin, $allowedOrigins) || in_array('*', $allowedOrigins)) {
-            $response->header('Access-Control-Allow-Origin', $origin ?: '*');
-            $response->header('Access-Control-Allow-Credentials', 'true');
-            $response->header('Vary', 'Origin');
+        try {
+            $response = $next($request);
+        } catch (\Throwable $e) {
+            // Si hay un error interno, capturamos la respuesta de error de Laravel
+            // y le inyectamos las cabeceras CORS para poder ver el error en la consola
+            $response = response()->json([
+                'message' => 'Internal Server Error',
+                'error' => $e->getMessage()
+            ], 500);
         }
+
+        // Asegurar que la respuesta sea un objeto de respuesta de Symfony/Laravel
+        if (!$response instanceof Response) {
+            $response = response($response);
+        }
+
+        // Inyectar cabeceras en todas las respuestas (éxito o error)
+        $response->headers->set('Access-Control-Allow-Origin', $origin);
+        $response->headers->set('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, PUT, DELETE, PATCH');
+        $response->headers->set('Access-Control-Allow-Credentials', 'true');
+        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Tenant, Accept, Origin, Set-Cookie');
 
         return $response;
     }
