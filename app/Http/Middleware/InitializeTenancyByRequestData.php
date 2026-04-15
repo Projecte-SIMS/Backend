@@ -36,7 +36,10 @@ class InitializeTenancyByRequestData
             ], 400);
         }
 
-        $tenant = Tenant::find($tenantId);
+        // Use cache to find tenant to avoid database hits on every request
+        $tenant = \Cache::remember("tenant_entity_{$tenantId}", 3600, function () use ($tenantId) {
+            return Tenant::find($tenantId);
+        });
 
         if (!$tenant) {
             return response()->json([

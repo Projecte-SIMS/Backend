@@ -48,23 +48,28 @@ class TenantController extends Controller
 
     private function getTenantStats(Tenant $tenant): array
     {
-        $stats = [
-            'vehicles_count' => 0,
-            'reservations_count' => 0,
-            'tickets_count' => 0,
-        ];
+        $cacheKey = "tenant_stats_{$tenant->id}";
+        
+        return \Cache::remember($cacheKey, 300, function () use ($tenant) {
+            $stats = [
+                'vehicles_count' => 0,
+                'reservations_count' => 0,
+                'tickets_count' => 0,
+            ];
 
-        try {
-            $tenant->run(function () use (&$stats) {
-                $stats['vehicles_count'] = \App\Models\Vehicle::count();
-                $stats['reservations_count'] = \App\Models\Reservation::count();
-                $stats['tickets_count'] = \App\Models\Ticket::count();
-            });
-        } catch (\Exception $e) {
-            // Probably schema not initialized yet
-        }
+            try {
+                $tenant->run(function () use (&$stats) {
+                    $stats['vehicles_count'] = \App\Models\Vehicle::count();
+                    $stats['reservations_count'] = \App\Models\Reservation::count();
+                    $stats['tickets_count'] = \App\Models\Ticket::count();
+                });
+            } catch (\Exception $e) {
+                // Probably schema not initialized yet
+                \Log::warning("Could not get stats for tenant {$tenant->id}: " . $e->getMessage());
+            }
 
-        return $stats;
+            return $stats;
+        });
     }
 
     /**
