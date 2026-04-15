@@ -48,29 +48,25 @@ class TenantController extends Controller
 
     private function getTenantStats(Tenant $tenant): array
     {
-        $cacheKey = "tenant_stats_{$tenant->id}";
-        
-        return \Cache::remember($cacheKey, 10, function () use ($tenant) {
-            $stats = [
-                'vehicles_count' => 0,
-                'reservations_count' => 0,
-                'tickets_count' => 0,
-            ];
+        $stats = [
+            'vehicles_count' => 0,
+            'reservations_count' => 0,
+            'tickets_count' => 0,
+        ];
 
-            try {
-                $tenant->run(function () use (&$stats) {
-                    // Use explicit connection to avoid issues
-                    $stats['vehicles_count'] = \DB::connection('tenant')->table('vehicles')->whereNull('deleted_at')->count();
-                    $stats['reservations_count'] = \DB::connection('tenant')->table('reservations')->whereNull('deleted_at')->count();
-                    $stats['tickets_count'] = \DB::connection('tenant')->table('tickets')->whereNull('deleted_at')->count();
-                });
-            } catch (\Exception $e) {
-                // Probably schema not initialized yet or tables missing
-                \Log::warning("Could not get stats for tenant {$tenant->id}: " . $e->getMessage());
-            }
+        try {
+            $tenant->run(function () use (&$stats) {
+                // Consulta directa sin caché para tiempo real
+                $stats['vehicles_count'] = \DB::connection('tenant')->table('vehicles')->whereNull('deleted_at')->count();
+                $stats['reservations_count'] = \DB::connection('tenant')->table('reservations')->whereNull('deleted_at')->count();
+                $stats['tickets_count'] = \DB::connection('tenant')->table('tickets')->whereNull('deleted_at')->count();
+            });
+        } catch (\Exception $e) {
+            // Probablemente el esquema aún no existe o no tiene las tablas
+            \Log::warning("Could not get stats for tenant {$tenant->id}: " . $e->getMessage());
+        }
 
-            return $stats;
-        });
+        return $stats;
     }
 
     /**
