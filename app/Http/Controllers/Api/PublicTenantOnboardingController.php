@@ -39,7 +39,10 @@ class PublicTenantOnboardingController extends Controller
             ]);
 
             $tenantId = $this->reserveTenantId($validated['company_slug'] ?? $validated['company_name']);
-            $domain = "{$tenantId}.tenant.local";
+            
+            // Generate domain based on central domain from config
+            $centralDomain = env('CENTRAL_DOMAIN', $request->getHost());
+            $domain = "{$tenantId}.{$centralDomain}";
 
             $createTenantRequest = Request::create('/api/tenants', 'POST', [
                 'id' => $tenantId,
