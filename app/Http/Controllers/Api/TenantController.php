@@ -96,6 +96,7 @@ class TenantController extends Controller
         }
 
         try {
+            set_time_limit(0); // Allow longer execution time for migrations/seeding
             \Log::info('Creating tenant', ['id' => $request->id, 'domain' => $request->domain]);
             
             // Clean up: Drop schema if it exists from a previous failed attempt
@@ -131,78 +132,14 @@ class TenantController extends Controller
                 
                 \Log::info('Running seeder for tenant', ['tenant_id' => tenant('id')]);
                 try {
-                    // Load seeders using direct class loading
-                    $seederPath = database_path('seeders');
-                    
-                    // 1. Run PermissionsSeeder
-                    require_once $seederPath . '/PermissionsSeeder.php';
-                    $permSeeder = new \Database\Seeders\PermissionsSeeder();
-                    $permSeeder->run();
-                    \Log::info('Permissions seeded');
-                    
-                    // 2. Run RolesSeeder
-                    require_once $seederPath . '/RolesSeeder.php';
-                    $roleSeeder = new \Database\Seeders\RolesSeeder();
-                    $roleSeeder->run();
-                    \Log::info('Roles seeded');
-                    
-                    // 3. Create users and assign roles
-                    $password = Hash::make('password');
-                    
-                    $admin = User::firstOrCreate(
-                        ['email' => 'admin@sims.com'],
-                        [
-                            'name' => 'Administrador',
-                            'username' => 'admin',
-                            'password' => $password,
-                            'active' => true,
-                        ]
-                    );
-                    if ($admin->wasRecentlyCreated) {
-                        $admin->assignRole('Admin');
-                    }
-                    
-                    $client = User::firstOrCreate(
-                        ['email' => 'client@sims.com'],
-                        [
-                            'name' => 'Cliente Demo',
-                            'username' => 'client',
-                            'password' => $password,
-                            'active' => true,
-                        ]
-                    );
-                    if ($client->wasRecentlyCreated) {
-                        $client->assignRole('Client');
-                    }
-                    
-                    $maintenance = User::firstOrCreate(
-                        ['email' => 'maint@sims.com'],
-                        [
-                            'name' => 'Técnico Mantenimiento',
-                            'username' => 'maintenance',
-                            'password' => $password,
-                            'active' => true,
-                        ]
-                    );
-                    if ($maintenance->wasRecentlyCreated) {
-                        $maintenance->assignRole('Maintenance');
-                    }
-                    
-                    \Log::info('Users seeded for tenant');
-                    
-                    // 4. Run TestDataSeeder if available
-                    $testDataPath = $seederPath . '/TestDataSeeder.php';
-                    if (file_exists($testDataPath)) {
-                        require_once $testDataPath;
-                        $testSeeder = new \Database\Seeders\TestDataSeeder();
-                        $testSeeder->run();
-                        \Log::info('Test data seeded');
-                    }
-                    
+                    \Artisan::call('db:seed', [
+                        '--class' => 'Database\\Seeders\\Tenant\\TenantDatabaseSeeder',
+                        '--force' => true,
+                    ]);
+                    \Log::info('Seeding completed via Artisan');
                 } catch (\Exception $e) {
                     \Log::warning('Seeding warning (non-critical): ' . $e->getMessage());
                 }
-                \Log::info('Seeding completed');
             });
             
             // Verify tables were created by checking if users table exists
@@ -231,7 +168,6 @@ class TenantController extends Controller
                 } catch (\Exception $e) {
                     \Log::error('Error verifying tenant tables', [
                         'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString(),
                     ]);
                 }
             });
