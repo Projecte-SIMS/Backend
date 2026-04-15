@@ -86,3 +86,4 @@ deployer_console.py
 sims-backend-latest.tar
 routes/tenant.php.bak2
 .env copy
+.env.local
