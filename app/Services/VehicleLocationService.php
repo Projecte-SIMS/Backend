@@ -35,6 +35,7 @@ class VehicleLocationService
     {
         try {
             $response = Http::timeout($this->timeout)
+                ->withHeaders(['x-api-key' => $this->apiKey])
                 ->get("{$this->baseUrl}/api/devices");
 
             if (!$response->successful()) {
@@ -99,6 +100,7 @@ class VehicleLocationService
     {
         try {
             $response = Http::timeout($this->timeout)
+                ->withHeaders(['x-api-key' => $this->apiKey])
                 ->get("{$this->baseUrl}/api/devices");
 
             if (!$response->successful()) {
@@ -119,6 +121,7 @@ class VehicleLocationService
     {
         try {
             $response = Http::timeout($this->timeout)
+                ->withHeaders(['x-api-key' => $this->apiKey])
                 ->get("{$this->baseUrl}/api/devices/{$deviceId}");
 
             if (!$response->successful()) {
@@ -204,6 +207,7 @@ class VehicleLocationService
     {
         try {
             $response = Http::timeout($this->timeout)
+                ->withHeaders(['x-api-key' => $this->apiKey])
                 ->get("{$this->baseUrl}/api/devices/{$deviceId}/route");
 
             if (!$response->successful()) {
@@ -224,6 +228,7 @@ class VehicleLocationService
     {
         try {
             $response = Http::timeout($this->timeout)
+                ->withHeaders(['x-api-key' => $this->apiKey])
                 ->post("{$this->baseUrl}/api/devices/{$deviceId}/route/clear");
 
             return $response->successful();
@@ -271,6 +276,7 @@ class VehicleLocationService
     {
         try {
             $response = Http::timeout(3)
+                ->withHeaders(['x-api-key' => $this->apiKey])
                 ->get("{$this->baseUrl}/api/ping/{$deviceId}");
 
             return $response->successful() && ($response->json()['online'] ?? false);
@@ -287,6 +293,7 @@ class VehicleLocationService
     {
         try {
             $response = Http::timeout($this->timeout)
+                ->withHeaders(['x-api-key' => $this->apiKey])
                 ->put("{$this->baseUrl}/api/devices/{$deviceId}", [
                     'license_plate' => $licensePlate
                 ]);
@@ -331,6 +338,7 @@ class VehicleLocationService
     {
         try {
             $response = Http::timeout($this->timeout)
+                ->withHeaders(['x-api-key' => $this->apiKey])
                 ->delete("{$this->baseUrl}/api/devices/{$deviceId}");
 
             return $response->successful();

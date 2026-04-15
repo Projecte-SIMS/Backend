@@ -52,14 +52,38 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
-        // Rate limiter for chatbot: 20 requests per minute per user
+        // Rate limiter for chatbot: 50 requests per minute per user
         RateLimiter::for('chatbot', function (Request $request) {
-            return Limit::perMinute(20)
+            return Limit::perMinute(50)
                 ->by($request->user()?->id ?: $request->ip())
                 ->response(function (Request $request, array $headers) {
                     return response()->json([
                         'message' => 'Has alcanzado el límite de consultas al asistente. Espera un momento.',
                         'retry_after' => $headers['Retry-After'] ?? 60,
+                    ], 429, $headers);
+                });
+        });
+
+        // Rate limiter for user registration: 3 per hour per IP
+        RateLimiter::for('register', function (Request $request) {
+            return Limit::perHour(3)
+                ->by($request->ip())
+                ->response(function (Request $request, array $headers) {
+                    return response()->json([
+                        'message' => 'Demasiados intentos de registro. Por favor, inténtalo más tarde.',
+                        'retry_after' => $headers['Retry-After'] ?? 3600,
+                    ], 429, $headers);
+                });
+        });
+
+        // Rate limiter for tenant onboarding: 2 per hour per IP
+        RateLimiter::for('onboarding', function (Request $request) {
+            return Limit::perHour(2)
+                ->by($request->ip())
+                ->response(function (Request $request, array $headers) {
+                    return response()->json([
+                        'message' => 'Límite de creación de empresas alcanzado. Por favor, espera.',
+                        'retry_after' => $headers['Retry-After'] ?? 3600,
                     ], 429, $headers);
                 });
         });

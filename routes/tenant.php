@@ -38,7 +38,7 @@ Route::middleware([
         ->name('login');
 
     Route::post('/register', [AuthController::class, 'register'])
-        ->middleware('throttle:login')
+        ->middleware('throttle:register')
         ->name('register');
 
     // Debug endpoint to check tenant context

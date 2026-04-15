@@ -32,7 +32,7 @@ Route::get('/health', function () {
 Route::post('/central/login', [AuthController::class, 'centralLogin']);
 Route::post('/central/billing/webhook/stripe', [BillingController::class, 'stripeWebhook']);
 Route::post('/public/tenant-onboarding/demo-complete', [PublicTenantOnboardingController::class, 'demoComplete'])
-    ->middleware('throttle:30,1');
+    ->middleware('throttle:onboarding');
 
 // Tenant management routes (protected with central admin middleware)
 Route::middleware('central.admin')->prefix('tenants')->group(function () {
