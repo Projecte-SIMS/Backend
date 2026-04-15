@@ -30,6 +30,7 @@ class TenantController extends Controller
             'data' => $tenants->map(function ($tenant) {
                 // Get admin user from tenant's database
                 $adminInfo = $this->getTenantAdmin($tenant);
+                $stats = $this->getTenantStats($tenant);
                 
                 return [
                     'id' => $tenant->id,
@@ -39,9 +40,31 @@ class TenantController extends Controller
                     'created_at' => $tenant->created_at,
                     'updated_at' => $tenant->updated_at,
                     'billing' => $this->buildBillingSummary($tenant),
+                    'stats' => $stats,
                 ];
             }),
         ]);
+    }
+
+    private function getTenantStats(Tenant $tenant): array
+    {
+        $stats = [
+            'vehicles_count' => 0,
+            'reservations_count' => 0,
+            'tickets_count' => 0,
+        ];
+
+        try {
+            $tenant->run(function () use (&$stats) {
+                $stats['vehicles_count'] = \App\Models\Vehicle::count();
+                $stats['reservations_count'] = \App\Models\Reservation::count();
+                $stats['tickets_count'] = \App\Models\Ticket::count();
+            });
+        } catch (\Exception $e) {
+            // Probably schema not initialized yet
+        }
+
+        return $stats;
     }
 
     /**
@@ -275,6 +298,7 @@ class TenantController extends Controller
         }
 
         $adminInfo = $this->getTenantAdmin($tenant);
+        $stats = $this->getTenantStats($tenant);
 
         return response()->json([
             'success' => true,
@@ -287,6 +311,7 @@ class TenantController extends Controller
                 'created_at' => $tenant->created_at,
                 'updated_at' => $tenant->updated_at,
                 'billing' => $this->buildBillingSummary($tenant),
+                'stats' => $stats,
             ],
         ]);
     }
