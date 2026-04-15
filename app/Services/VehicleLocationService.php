@@ -27,16 +27,26 @@ class VehicleLocationService
     }
 
     /**
+     * Obtiene el ID del inquilino actual.
+     * Si no hay inquilino (consola/central), usa 'default'.
+     */
+    private function getTenantId(): string
+    {
+        return function_exists('tenant') && tenant('id') ? (string) tenant('id') : 'default';
+    }
+
+    /**
      * Obtiene las ubicaciones de todos los vehículos desde el microservicio IoT.
      * Devuelve un array indexado por license_plate.
      * Si el microservicio no está disponible, devuelve array vacío.
      */
     public function getLocations(): array
     {
+        $tenantId = $this->getTenantId();
         try {
             $response = Http::timeout($this->timeout)
                 ->withHeaders(['x-api-key' => $this->apiKey])
-                ->get("{$this->baseUrl}/api/devices");
+                ->get("{$this->baseUrl}/api/{$tenantId}/devices");
 
             if (!$response->successful()) {
                 Log::warning('IoT Microservice returned error', [
@@ -98,10 +108,11 @@ class VehicleLocationService
      */
     public function getAllDevices(): array
     {
+        $tenantId = $this->getTenantId();
         try {
             $response = Http::timeout($this->timeout)
                 ->withHeaders(['x-api-key' => $this->apiKey])
-                ->get("{$this->baseUrl}/api/devices");
+                ->get("{$this->baseUrl}/api/{$tenantId}/devices");
 
             if (!$response->successful()) {
                 return [];
@@ -119,10 +130,11 @@ class VehicleLocationService
      */
     public function getDevice(string $deviceId): ?array
     {
+        $tenantId = $this->getTenantId();
         try {
             $response = Http::timeout($this->timeout)
                 ->withHeaders(['x-api-key' => $this->apiKey])
-                ->get("{$this->baseUrl}/api/devices/{$deviceId}");
+                ->get("{$this->baseUrl}/api/{$tenantId}/devices/{$deviceId}");
 
             if (!$response->successful()) {
                 return null;
@@ -152,13 +164,14 @@ class VehicleLocationService
      */
     public function sendCommand(string $deviceId, string $action, int $relay = 0): array
     {
+        $tenantId = $this->getTenantId();
         try {
             $response = Http::timeout($this->timeout)
                 ->withHeaders([
                     'x-api-key' => $this->apiKey,
                     'Content-Type' => 'application/json',
                 ])
-                ->post("{$this->baseUrl}/api/command", [
+                ->post("{$this->baseUrl}/api/{$tenantId}/command", [
                     'device_id' => $deviceId,
                     'action' => $action,
                     'relay' => $relay,
@@ -205,10 +218,11 @@ class VehicleLocationService
      */
     public function getRoute(string $deviceId): array
     {
+        $tenantId = $this->getTenantId();
         try {
             $response = Http::timeout($this->timeout)
                 ->withHeaders(['x-api-key' => $this->apiKey])
-                ->get("{$this->baseUrl}/api/devices/{$deviceId}/route");
+                ->get("{$this->baseUrl}/api/{$tenantId}/devices/{$deviceId}/route");
 
             if (!$response->successful()) {
                 return [];
@@ -226,10 +240,11 @@ class VehicleLocationService
      */
     public function clearRoute(string $deviceId): bool
     {
+        $tenantId = $this->getTenantId();
         try {
             $response = Http::timeout($this->timeout)
                 ->withHeaders(['x-api-key' => $this->apiKey])
-                ->post("{$this->baseUrl}/api/devices/{$deviceId}/route/clear");
+                ->post("{$this->baseUrl}/api/{$tenantId}/devices/{$deviceId}/route/clear");
 
             return $response->successful();
         } catch (\Exception $e) {
@@ -274,10 +289,11 @@ class VehicleLocationService
      */
     public function isDeviceOnline(string $deviceId): bool
     {
+        $tenantId = $this->getTenantId();
         try {
             $response = Http::timeout(3)
                 ->withHeaders(['x-api-key' => $this->apiKey])
-                ->get("{$this->baseUrl}/api/ping/{$deviceId}");
+                ->get("{$this->baseUrl}/api/{$tenantId}/ping/{$deviceId}");
 
             return $response->successful() && ($response->json()['online'] ?? false);
         } catch (\Exception $e) {
@@ -291,10 +307,11 @@ class VehicleLocationService
      */
     public function updateDevicePlate(string $deviceId, string $licensePlate): array
     {
+        $tenantId = $this->getTenantId();
         try {
             $response = Http::timeout($this->timeout)
                 ->withHeaders(['x-api-key' => $this->apiKey])
-                ->put("{$this->baseUrl}/api/devices/{$deviceId}", [
+                ->put("{$this->baseUrl}/api/{$tenantId}/devices/{$deviceId}", [
                     'license_plate' => $licensePlate
                 ]);
 
@@ -336,10 +353,11 @@ class VehicleLocationService
      */
     public function deleteDevice(string $deviceId): bool
     {
+        $tenantId = $this->getTenantId();
         try {
             $response = Http::timeout($this->timeout)
                 ->withHeaders(['x-api-key' => $this->apiKey])
-                ->delete("{$this->baseUrl}/api/devices/{$deviceId}");
+                ->delete("{$this->baseUrl}/api/{$tenantId}/devices/{$deviceId}");
 
             return $response->successful();
         } catch (\Exception $e) {
