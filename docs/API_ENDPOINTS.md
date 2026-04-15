@@ -1,171 +1,125 @@
-# Referencia de Endpoints de la API SIMS
+# Referencia Técnica de Endpoints de la API SIMS (SaaS Multitenant)
 
-Este documento proporciona una lista exhaustiva de todos los puntos de entrada (endpoints) disponibles en la API del Sistema Inteligente de Movilidad Sostenible (SIMS), detallando su propósito, método HTTP y nivel de acceso requerido.
-
-**Última actualización:** 2026-03-03
+Este documento detalla la totalidad de los puntos de acceso (endpoints) disponibles en la API de SIMS v5.0, organizados por su nivel de acceso y función dentro de la arquitectura multitenant.
 
 ---
 
-## 1. Endpoints Públicos
+## 1. Identificación y Aislamiento de Inquilinos
 
-Estos endpoints no requieren autenticación previa.
+Para todos los endpoints (excepto los de la API Central), se requiere la identificación del inquilino (tenant). Esto es procesado por el middleware `InitializeTenancyByRequestData`.
 
-| Método | Endpoint | Acción | Descripción |
-| :--- | :--- | :--- | :--- |
-| POST | `/api/login` | AuthController@login | Inicia sesión y devuelve un token de acceso (Sanctum). Rate limit: 5/min. |
-| POST | `/api/register` | AuthController@register | Registra un nuevo usuario con rol Client. Rate limit: 5/min. |
-| GET | `/api/public/vehicles/map` | VehicleController@publicMap | Mapa público de vehículos disponibles (sin autenticación). |
+*   **Header HTTP (Obligatorio):** `X-Tenant: {tenant_id}`
+*   **Query Parameter:** `?tenant={tenant_id}`
 
----
-
-## 2. Endpoints para Usuarios Autenticados (Clientes)
-
-Requieren una cabecera `Authorization: Bearer {token}` válida.
-
-### 2.1. Gestión de Perfil y Sesión
-| Método | Endpoint | Acción | Descripción |
-| :--- | :--- | :--- | :--- |
-| POST | `/api/logout` | AuthController@logout | Invalida el token actual y cierra la sesión. |
-| GET | `/api/users/me` | UserController@me | Obtiene los datos del perfil del usuario autenticado. |
-| PUT | `/api/users/me` | UserController@updateMe | Actualiza la información del perfil del usuario autenticado. |
-| DELETE | `/api/users/me` | UserController@destroyMe | Elimina de forma lógica (soft delete) la cuenta del usuario. |
-
-### 2.2. Flota de Vehículos
-| Método | Endpoint | Acción | Descripción |
-| :--- | :--- | :--- | :--- |
-| GET | `/api/vehicles` | VehicleController@index | Lista todos los vehículos disponibles. |
-| GET | `/api/vehicles/map` | VehicleController@map | Obtiene coordenadas y estado para visualización en mapa. |
-| GET | `/api/vehicles/{vehicle}` | VehicleController@show | Muestra el detalle técnico de un vehículo específico. |
-
-### 2.3. Reservas de Movilidad
-| Método | Endpoint | Acción | Descripción |
-| :--- | :--- | :--- | :--- |
-| GET | `/api/reservations` | ReservationController@index | Lista las reservas del usuario autenticado. |
-| POST | `/api/reservations` | ReservationController@store | Crea una nueva reserva para un vehículo disponible. |
-| GET | `/api/reservations/{reservation}` | ReservationController@show | Muestra el detalle de una reserva propia. |
-| POST | `/api/reservations/{reservation}/activate` | ReservationController@activate | Activa una reserva para iniciar el viaje. |
-| POST | `/api/reservations/{reservation}/finish` | ReservationController@finish | Finaliza el uso del vehículo y cierra la reserva. |
-| POST | `/api/reservations/{reservation}/cancel` | ReservationController@cancel | Cancela una reserva antes de ser utilizada. |
-| POST | `/api/reservations/{reservation}/on` | ReservationController@turnOn | Enciende el vehículo de una reserva activa. |
-| POST | `/api/reservations/{reservation}/off` | ReservationController@turnOff | Apaga el vehículo de una reserva activa. |
-| POST | `/api/reservations/{reservation}/force-finish` | ReservationController@forceFinish | Cierre de emergencia de una reserva por parte del usuario. |
-
-### 2.4. Soporte y Tickets
-| Método | Endpoint | Acción | Descripción |
-| :--- | :--- | :--- | :--- |
-| GET | `/api/tickets` | TicketController@index | Lista los tickets de soporte abiertos por el usuario. |
-| POST | `/api/tickets` | TicketController@store | Crea una nueva solicitud de soporte o incidencia. |
-| GET | `/api/tickets/{ticket}` | TicketController@show | Muestra el hilo de conversación de un ticket específico. |
-| POST | `/api/tickets/{ticket}/messages` | TicketMessageController@store | Envía un mensaje dentro de un ticket existente. |
-| DELETE | `/api/messages/{message}` | TicketMessageController@destroy | Elimina un mensaje propio enviado en un ticket. |
-
-### 2.5. Asistente IA
-| Método | Endpoint | Acción | Descripción |
-| :--- | :--- | :--- | :--- |
-| POST | `/api/chatbot/chat` | ChatbotController@chat | Envía consulta al asistente IA. Rate limit: 20/min. |
-
-### 2.6. Dispositivos IoT (Lectura)
-| Método | Endpoint | Acción | Descripción |
-| :--- | :--- | :--- | :--- |
-| GET | `/api/iot/devices` | IoTController@devices | Lista todos los dispositivos IoT conectados. |
-| GET | `/api/iot/devices/{deviceId}` | IoTController@device | Detalle de un dispositivo específico. |
-| GET | `/api/iot/devices/{deviceId}/ping` | IoTController@ping | Verifica si un dispositivo está online. |
+Si no se proporciona el identificador, el sistema denegará el acceso al esquema de base de datos correspondiente.
 
 ---
 
-## 3. Endpoints de Administración (Admin API)
+## 2. API Central (Landlord - Gestión Global)
 
-Requieren autenticación y pertenecer al rol de administrador. Se encuentran bajo el prefijo `/api/admin`.
+Estas rutas gestionan la infraestructura de inquilinos y no requieren la cabecera `X-Tenant`. Se protegen con el middleware `CentralAdminAuth`.
 
-### 3.1. Gestión de Usuarios
-| Método | Endpoint | Acción | Descripción |
+| Método | Ruta | Controlador@Acción | Descripción |
 | :--- | :--- | :--- | :--- |
-| GET | `/api/admin/users` | UserController@index | Listado global de todos los usuarios registrados. |
-| POST | `/api/admin/users` | UserController@store | Crea un nuevo usuario manualmente. |
-| GET | `/api/admin/users/{user}` | UserController@show | Detalle completo de cualquier usuario del sistema. |
-| PUT/PATCH | `/api/admin/users/{user}` | UserController@update | Modifica los datos de un usuario. |
-| DELETE | `/api/admin/users/{user}` | UserController@destroy | Eliminación administrativa de una cuenta. |
-
-### 3.2. Gestión de la Flota (Admin)
-| Método | Endpoint | Acción | Descripción |
-| :--- | :--- | :--- | :--- |
-| GET | `/api/admin/vehicles` | VehicleController@index | Listado administrativo de la flota. |
-| POST | `/api/admin/vehicles` | VehicleController@store | Registra un nuevo vehículo en la plataforma. |
-| GET | `/api/admin/vehicles/map` | VehicleController@adminMap | Vista del mapa con información técnica extendida. |
-| GET | `/api/admin/vehicles/{vehicle}` | VehicleController@show | Detalle administrativo del vehículo. |
-| PUT/PATCH | `/api/admin/vehicles/{vehicle}` | VehicleController@update | Actualiza especificaciones o estado de un vehículo. |
-| DELETE | `/api/admin/vehicles/{vehicle}` | VehicleController@destroy | Elimina un vehículo de la flota. |
-
-### 3.3. Control de Reservas (Admin)
-| Método | Endpoint | Acción | Descripción |
-| :--- | :--- | :--- | :--- |
-| GET | `/api/admin/reservations` | AdminReservationController@index | Supervisión de todas las reservas del sistema. |
-| POST | `/api/admin/reservations` | AdminReservationController@store | Crea una reserva de forma administrativa. |
-| GET | `/api/admin/reservations/{id}` | AdminReservationController@show | Consulta técnica de una reserva ajena. |
-| PUT | `/api/admin/reservations/{id}` | AdminReservationController@update | Modifica los parámetros de una reserva. |
-| DELETE | `/api/admin/reservations/{id}` | AdminReservationController@destroy | Elimina el registro de una reserva. |
-| POST | `/api/admin/reservations/{id}/force-finish` | AdminReservationController@forceFinish | Cierre administrativo forzado de una reserva activa. |
-
-### 3.4. Gestión de Tickets (Admin)
-| Método | Endpoint | Acción | Descripción |
-| :--- | :--- | :--- | :--- |
-| GET | `/api/admin/tickets` | TicketController@index | Bandeja de entrada de todos los tickets del sistema. |
-| POST | `/api/admin/tickets` | TicketController@store | Crea un ticket de forma administrativa. |
-| GET | `/api/admin/tickets/{ticket}` | TicketController@show | Ver detalle de un ticket. |
-| PUT | `/api/admin/tickets/{ticket}` | TicketController@update | Modifica el estado o prioridad de un ticket. |
-| DELETE | `/api/admin/tickets/{ticket}` | TicketController@destroy | Cierra o elimina un ticket de forma administrativa. |
-| POST | `/api/admin/tickets/{ticket}/messages` | TicketMessageController@store | Responde a un usuario dentro de un ticket de soporte. |
-
-### 3.5. Configuración de Seguridad (RBAC)
-| Método | Endpoint | Acción | Descripción |
-| :--- | :--- | :--- | :--- |
-| GET | `/api/admin/roles` | RoleController@index | Listado de roles disponibles. |
-| POST | `/api/admin/roles` | RoleController@store | Crea un nuevo rol en el sistema. |
-| GET | `/api/admin/roles/{role}` | RoleController@show | Detalle de un rol y sus permisos. |
-| PUT/PATCH | `/api/admin/roles/{role}` | RoleController@update | Modifica la configuración de un rol. |
-| DELETE | `/api/admin/roles/{role}` | RoleController@destroy | Elimina un rol del sistema. |
-| GET | `/api/admin/permissions` | PermissionController@index | Listado de todos los permisos atómicos definidos. |
-| POST | `/api/admin/permissions` | PermissionController@store | Registra un nuevo permiso. |
-| PUT | `/api/admin/permissions/{id}` | PermissionController@update | Actualiza la definición de un permiso. |
-| DELETE | `/api/admin/permissions/{id}` | PermissionController@destroy | Elimina un permiso del sistema. |
-
-### 3.6. Control IoT (Admin)
-| Método | Endpoint | Acción | Descripción |
-| :--- | :--- | :--- | :--- |
-| GET | `/api/admin/iot/health` | IoTController@health | Verifica el estado del microservicio IoT. |
-| GET | `/api/admin/iot/logs` | IoTController@logs | Lista logs de comandos IoT enviados. |
-| POST | `/api/admin/iot/devices/{deviceId}/on` | IoTController@turnOn | Enciende un vehículo remotamente. |
-| POST | `/api/admin/iot/devices/{deviceId}/off` | IoTController@turnOff | Apaga un vehículo remotamente. |
-| POST | `/api/admin/iot/devices/{deviceId}/command` | IoTController@sendCommand | Envía comando genérico (on/off/reboot). |
-| POST | `/api/admin/iot/devices/{deviceId}/link` | IoTController@linkToVehicle | Vincula dispositivo IoT a un vehículo. |
-| GET | `/api/admin/iot/devices/unlinked` | IoTController@unlinkedDevices | Lista dispositivos sin vincular (AUTO-*). |
-| GET | `/api/admin/iot/vehicles/available` | IoTController@availableVehicles | Lista vehículos disponibles para vincular. |
+| POST | `/api/central/login` | AuthController@centralLogin | Autenticación de Super Administrador global. |
+| POST | `/api/central/billing/webhook/stripe` | BillingController@stripeWebhook | Procesamiento de notificaciones de pago de Stripe. |
+| GET | `/api/tenants` | TenantController@index | Listado completo de inquilinos registrados. |
+| POST | `/api/tenants` | TenantController@store | Creación de nuevo inquilino (proceso de aprovisionamiento de esquema). |
+| GET | `/api/tenants/{id}` | TenantController@show | Consulta de metadatos de un inquilino específico. |
+| GET | `/api/tenants/{id}/verify` | TenantController@verify | Verificación de estado del esquema y migraciones del inquilino. |
+| POST | `/api/tenants/{id}/domains` | TenantController@addDomain | Asociación de un nuevo dominio técnico al inquilino. |
+| DELETE | `/api/tenants/{id}` | TenantController@destroy | Eliminación total y permanente de un inquilino y sus datos. |
+| GET | `/api/tenants/{id}/billing/status` | BillingController@status | Consulta del estado de facturación y cuotas del inquilino. |
+| POST | `/api/tenants/{id}/billing/checkout-session` | BillingController@checkoutSession | Generación de sesión de pago para el inquilino. |
 
 ---
 
-## 4. Rate Limiting
+## 3. API de Inquilino (Tenant - Operativa de Negocio)
 
-| Grupo | Límite | Aplicado a |
-|-------|--------|------------|
-| `login` | 5 peticiones/minuto por IP | `/api/login`, `/api/register` |
-| `chatbot` | 20 peticiones/minuto por usuario | `/api/chatbot/chat` |
-| `api` | 60 peticiones/minuto por usuario | Resto de endpoints autenticados |
+Requieren la cabecera `X-Tenant`. Los datos se consultan exclusivamente en el esquema del inquilino identificado.
+
+### 3.1. Autenticación y Perfil (Middlewares: api, EnsureTenantBillingIsActive)
+| Método | Ruta | Controlador@Acción | Descripción |
+| :--- | :--- | :--- | :--- |
+| POST | `/api/login` | AuthController@login | Inicio de sesión local en el esquema del inquilino. |
+| POST | `/api/register` | AuthController@register | Registro de nuevo usuario (rol Client) en el esquema local. |
+| POST | `/api/logout` | AuthController@logout | Invalida el token de acceso actual (TenantSanctumAuth). |
+| GET | `/api/users/me` | UserController@me | Obtención de datos del perfil del usuario autenticado. |
+| PUT | `/api/users/me` | UserController@updateMe | Actualización de datos del perfil del usuario actual. |
+| DELETE | `/api/users/me` | UserController@destroyMe | Eliminación lógica de la cuenta del usuario. |
+
+### 3.2. Gestión de Flota y Disponibilidad (Middlewares: TenantSanctumAuth)
+| Método | Ruta | Controlador@Acción | Descripción |
+| :--- | :--- | :--- | :--- |
+| GET | `/api/vehicles` | VehicleController@index | Lista de vehículos disponibles en el inventario del inquilino. |
+| GET | `/api/vehicles/map` | VehicleController@map | Datos geoespaciales para la renderización de mapas. |
+| GET | `/api/vehicles/{vehicle}` | VehicleController@show | Detalle técnico y estado de batería de un vehículo. |
+| GET | `/api/public/vehicles/map` | VehicleController@publicMap | Mapa público accesible sin autenticación (pero con X-Tenant). |
+
+### 3.3. Reservas y Telemetría IoT (Middlewares: TenantSanctumAuth)
+| Método | Ruta | Controlador@Acción | Descripción |
+| :--- | :--- | :--- | :--- |
+| GET | `/api/reservations` | ReservationController@index | Historial y reservas activas del usuario. |
+| POST | `/api/reservations` | ReservationController@store | Creación de una nueva reserva de vehículo. |
+| GET | `/api/reservations/{reservation}` | ReservationController@show | Detalle de una reserva específica. |
+| POST | `/api/reservations/{reservation}/activate` | ReservationController@activate | Inicio de viaje (cambio de estado y registro de inicio). |
+| POST | `/api/reservations/{reservation}/finish` | ReservationController@finish | Finalización de viaje y liberación del vehículo. |
+| POST | `/api/reservations/{reservation}/cancel` | ReservationController@cancel | Cancelación de reserva pendiente. |
+| POST | `/api/reservations/{reservation}/on` | ReservationController@turnOn | Comando IoT: Activación del motor del vehículo. |
+| POST | `/api/reservations/{reservation}/off` | ReservationController@turnOff | Comando IoT: Desactivación del motor del vehículo. |
+| POST | `/api/reservations/{reservation}/force-finish` | ReservationController@forceFinish | Cierre de emergencia de reserva. |
+
+### 3.4. Soporte y Mensajería (Middlewares: TenantSanctumAuth)
+| Método | Ruta | Controlador@Acción | Descripción |
+| :--- | :--- | :--- | :--- |
+| GET | `/api/tickets` | TicketController@index | Listado de incidencias abiertas por el usuario. |
+| POST | `/api/tickets` | TicketController@store | Creación de un nuevo ticket de soporte. |
+| GET | `/api/tickets/{ticket}` | TicketController@show | Visualización del hilo de mensajes de un ticket. |
+| POST | `/api/tickets/{ticket}/messages` | TicketMessageController@store | Envío de un nuevo mensaje en un ticket. |
+| DELETE | `/api/messages/{message}` | TicketMessageController@destroy | Eliminación de un mensaje enviado. |
+
+### 3.5. Asistente IA (Middlewares: Throttle:chatbot)
+| Método | Ruta | Controlador@Acción | Descripción |
+| :--- | :--- | :--- | :--- |
+| POST | `/api/chatbot/chat` | ChatbotController@chat | Interacción con el asistente inteligente basado en LLM. |
 
 ---
 
-## 5. Códigos de Respuesta HTTP
+## 4. API de Administración de Inquilino (Tenant Admin)
 
-| Código | Significado |
-|--------|-------------|
-| 200 | Operación exitosa |
-| 201 | Recurso creado |
-| 204 | Eliminación exitosa |
-| 400 | Error de validación de negocio |
-| 401 | No autenticado |
-| 403 | No autorizado / Usuario inactivo |
-| 404 | Recurso no encontrado |
-| 409 | Conflicto (ej: vehículo ya reservado) |
-| 422 | Error de validación de datos |
-| 429 | Rate limit excedido |
-| 500 | Error interno del servidor |
-| 503 | Servicio no disponible (IoT offline) |
+Rutas bajo el prefijo `/api/admin/`. Requieren autenticación y pertenecer al rol de administrador dentro del inquilino (EnsureUserIsAdmin).
+
+### 4.1. Gestión de Recursos Internos
+| Método | Ruta | Controlador@Acción | Descripción |
+| :--- | :--- | :--- | :--- |
+| GET | `/api/admin/users` | UserController@index | Listado completo de usuarios de la organización. |
+| POST | `/api/admin/users` | UserController@store | Alta manual de usuarios por parte del administrador. |
+| PUT/PATCH | `/api/admin/users/{user}` | UserController@update | Modificación de datos o roles de un usuario local. |
+| GET | `/api/admin/vehicles` | VehicleController@index | Gestión del inventario total de flota. |
+| POST | `/api/admin/vehicles` | VehicleController@store | Registro de nuevos vehículos en el esquema. |
+| GET | `/api/admin/roles` | RoleController@index | Listado de roles del inquilino. |
+| POST | `/api/admin/roles` | RoleController@store | Creación de roles personalizados. |
+| GET | `/api/admin/tickets` | TicketController@index | Panel de gestión de soporte al cliente. |
+
+### 4.2. Control Avanzado IoT (Admin IoT)
+| Método | Ruta | Controlador@Acción | Descripción |
+| :--- | :--- | :--- | :--- |
+| GET | `/api/admin/iot/health` | IoTController@health | Estado de conexión con el microservicio global. |
+| GET | `/api/admin/iot/devices` | IoTController@devices | Dispositivos IoT actualmente en línea vinculados a este inquilino. |
+| POST | `/api/admin/iot/devices/{id}/link` | IoTController@linkToVehicle | Vinculación técnica de hardware IoT con matrícula de vehículo. |
+| GET | `/api/admin/iot/logs` | IoTController@logs | Historial detallado de comandos IoT enviados. |
+
+---
+
+## 5. Middleware de Seguridad y Aislamiento
+
+| Middleware | Función |
+| :--- | :--- |
+| `InitializeTenancyByRequestData` | Extrae el tenant ID y activa el esquema PostgreSQL correspondiente. |
+| `CentralAdminAuth` | Valida el acceso de Super Administradores a nivel global (Landlord). |
+| `TenantSanctumAuth` | Verifica el token de acceso contra la tabla de tokens del esquema del inquilino. |
+| `EnsureTenantBillingIsActive` | Bloquea el acceso si la suscripción del inquilino está suspendida. |
+| `EnsureUserIsAdmin` | Restringe el acceso a rutas administrativas dentro del inquilino. |
+
+---
+**Documentación de Referencia API SIMS - Abril 2026**

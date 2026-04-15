@@ -1,191 +1,91 @@
-# SIMS – Backend Laravel (Proyecto de Movilidad Sostenible)
+# SIMS Backend - Core Tecnológico Multitenant SaaS
 
-**Versión:** Sprint 5 – Primer Despliegue  
-**Fecha:** 2026-03-03  
-**Última actualización:** 2026-03-03
+Este repositorio contiene el núcleo lógico y la infraestructura de datos del Sistema Inteligente de Movilidad Sostenible (SIMS). Desarrollado con Laravel 12 y PHP 8.2+, el sistema implementa una arquitectura Multitenant avanzada mediante aislamiento físico por esquemas de PostgreSQL.
 
 ---
 
-## Descripción General
+## Estructura Técnica de Directorios
 
-El backend del Sistema Inteligente de Movilidad Sostenible (SIMS) es una infraestructura robusta desarrollada con Laravel 12.x y PHP 8.2+. Actúa como el núcleo de procesamiento del ecosistema, gestionando la lógica de negocio, la seguridad perimetral mediante tokens API y la persistencia de datos en entornos híbridos (PostgreSQL y MongoDB vía microservicio).
-
----
-
-## Índice de Documentación
-
-| Documento | Descripción |
-|-----------|-------------|
-| [Especificaciones del Proyecto](docs/SPECIFICATIONS.md) | Definición de funcionalidades, stack tecnológico y arquitectura |
-| [Ecosistema Tecnológico](docs/TECH_STACK.md) | Librerías, componentes y herramientas utilizadas |
-| [Referencia de Endpoints](docs/API_ENDPOINTS.md) | Listado completo de rutas de la API |
-| [Manual de Despliegue](docs/DEPLOYMENT.md) | Instrucciones de instalación y Docker |
-| [Decisiones de Diseño](docs/DECISIONS.md) | Justificación técnica de arquitecturas |
-| [Convenciones de Código](docs/CONVENTIONS.md) | Estándares PSR-12 y nomenclatura |
-| [Pacto de Contribución](docs/CONTRIBUTING.md) | Código de conducta para colaboradores |
-
----
-
-## Estructura del Proyecto
+La organización del código sigue los estándares de Laravel, con extensiones específicas para el soporte multi-inquilino y la integración IoT.
 
 ```
 project-sims-backend/
 ├── app/
 │   ├── Http/
 │   │   ├── Controllers/
-│   │   │   ├── Api/                    # AuthController, UserController, RoleController, PermissionController
-│   │   │   ├── VehicleController.php
-│   │   │   ├── TicketController.php
-│   │   │   ├── TicketMessageController.php
-│   │   │   ├── ReservationController.php
-│   │   │   ├── AdminReservationController.php
-│   │   │   ├── IoTController.php
-│   │   │   └── ChatbotController.php
+│   │   │   ├── Api/                    # Controladores Centrales (Auth, Tenant, Billing)
+│   │   │   ├── VehicleController.php   # Lógica de flota local
+│   │   │   ├── ReservationController.php # Flujo de reservas y viajes
+│   │   │   ├── IoTController.php       # Gestión de hardware y comandos remotos
+│   │   │   └── ChatbotController.php   # Integración con servicios de IA
 │   │   ├── Middleware/
-│   │   │   └── EnsureUserIsAdmin.php   # Middleware personalizado admin
-│   │   └── Requests/
-│   │       ├── StoreTicketRequest.php
-│   │       ├── UpdateTicketRequest.php
-│   │       └── Vehicle/                # StoreVehicleRequest, UpdateVehicleRequest
+│   │   │   ├── CentralAdminAuth.php    # Validación de SuperAdministradores
+│   │   │   ├── TenantSanctumAuth.php   # Autenticación basada en esquemas locales
+│   │   │   ├── EnsureTenantBillingIsActive.php # Control de acceso por facturación
+│   │   │   └── InitializeTenancyByRequestData.php # Inyección de contexto de inquilino
 │   ├── Models/
-│   │   ├── User.php
-│   │   ├── Vehicle.php
-│   │   ├── Reservation.php
-│   │   ├── Trip.php
-│   │   ├── Ticket.php
-│   │   ├── TicketMessage.php
-│   │   └── CommandLog.php              # Logs de comandos IoT
-│   ├── Policies/
-│   │   ├── UserPolicy.php
-│   │   ├── VehiclePolicy.php
-│   │   ├── ReservationPolicy.php
-│   │   ├── TicketPolicy.php
-│   │   └── RolePolicy.php
+│   │   ├── Tenant.php                  # Modelo Central (Esquema public)
+│   │   ├── User.php                    # Modelo de Usuario (Esquema local)
+│   │   ├── Vehicle.php                 # Entidad de vehículo vinculada a IoT
+│   │   └── Reservation.php             # Gestión de estados de alquiler
 │   └── Services/
-│       └── VehicleLocationService.php  # Comunicación con microservicio IoT
+│       ├── Billing/                    # Abstracción de pasarela Stripe
+│       └── VehicleLocationService.php  # Integración con microservicio FastAPI
+├── config/
+│   ├── tenancy.php                     # Reglas de identificación y aislamiento
+│   └── sanctum.php                     # Configuración de tokens multi-esquema
 ├── database/
-│   ├── factories/                      # UserFactory, VehicleFactory, ReservationFactory, TicketFactory
-│   ├── migrations/
-│   └── seeders/                        # PermissionsSeeder, RolesSeeder, etc.
-├── routes/
-│   └── api.php                         # 60+ endpoints REST
-├── tests/
-│   └── Feature/                        # 8 archivos, 51+ tests
-└── docs/                               # Documentación técnica
+│   ├── migrations/                     # Tablas del Landlord (Central)
+│   └── migrations/tenant/              # Tablas replicadas para cada Inquilino
+└── routes/
+    └── api.php                         # Definición exhaustiva de endpoints
 ```
 
 ---
 
-## Estado Actual del Backend (Sprint 5)
+## Arquitectura de Aislamiento de Datos
 
-### ✅ Completado
+SIMS garantiza la privacidad y seguridad de la información mediante el uso de esquemas de base de datos dinámicos.
 
-| Funcionalidad | Estado | Detalles |
-|---------------|--------|----------|
-| API REST completa (70+ endpoints) | ✅ | Documentada y probada. |
-| Autenticación Sanctum | ✅ | Tokens seguros y RBAC. |
-| Gestión de Usuarios y Roles | ✅ | Admin, Client, Maintenance. |
-| CRUD Vehículos y Reservas | ✅ | Lógica de negocio completa. |
-| Sistema de Tickets y Soporte | ✅ | Comunicación usuario-admin. |
-| **Integración IoT Completa** | ✅ | **Nuevo:** Vinculación dinámica de dispositivos y vehículos. |
-| Telemetría en Tiempo Real | ✅ | GPS, Batería, RPM, Temperatura. |
-| Control Remoto de Vehículos | ✅ | Encendido/Apagado y Reinicio de hardware. |
-| Logs de Auditoría IoT | ✅ | Registro de todos los comandos enviados. |
-| Chatbot IA | ✅ | Asistente inteligente integrado. |
-| Tests Automatizados | ✅ | Cobertura amplia (Feature/Unit). |
-| Docker Multi-Arch | ✅ | Soporte nativo para AMD64 y ARM64 (Apple Silicon). |
-
-### ⚠️ Próximos Pasos (Roadmap)
-
-| Tarea | Prioridad |
-|-------|-----------|
-| Implementación de WebSockets nativos en Laravel (Reverb) | Media |
-| Dashboard de Analítica Avanzada (Grafana/Kibana) | Baja |
-| Notificaciones Push (Firebase/OneSignal) | Baja |
+### Flujo de Identificación
+1.  **Recepción**: La petición llega con la cabecera 'X-Tenant' o el parámetro 'tenant'.
+2.  **Activación**: El sistema consulta el Landlord para verificar la existencia del inquilino.
+3.  **Conmutación**: Se ejecuta un comando 'SET search_path TO tenant_{id}, public' en PostgreSQL.
+4.  **Aislamiento**: Todas las consultas SQL posteriores se ejecutan contra el esquema privado de la organización.
 
 ---
 
-## Inicio Rápido (Despliegue Unificado)
+## Comandos de Mantenimiento y Operación
 
-Para levantar el backend junto con el resto del ecosistema desde la raíz:
+El mantenimiento de la infraestructura requiere el uso de comandos específicos de Artisan para asegurar la consistencia en todos los inquilinos.
 
-```bash
-# 1. Levantar contenedores
-docker compose up -d --build
+### Gestión de Base de Datos
+*   `php artisan migrate`: Actualiza solo la estructura central (Landlord).
+*   `php artisan tenants:migrate`: Ejecuta las migraciones en todos los esquemas de inquilinos existentes.
+*   `php artisan tenants:seed`: Población de datos iniciales (roles, permisos) en todos los inquilinos.
 
-# 2. Instalar dependencias y configurar base de datos
-docker exec sims-backend composer install
-docker exec sims-backend php artisan key:generate
-docker exec sims-backend php artisan migrate:fresh --seed
-```
-
-### Configuración de Red Interna
-- **Base de Datos:** El host configurado en `.env` debe ser `DB_HOST=db`.
-- **IoT Microservice:** Accesible internamente en `http://iot-server:8000`.
+### Seguridad
+*   `php artisan make:superadmin --email={correo}`: Comando para elevar privilegios a un usuario en el panel central.
 
 ---
 
-## Variables de Entorno Críticas
+## Integración con el Ecosistema
 
-| Variable | Descripción |
-|----------|-------------|
-| `APP_DEBUG` | `false` en producción |
-| `DB_CONNECTION` | `pgsql` |
-| `IOT_MICROSERVICE_URL` | URL del microservicio FastAPI (ej: `http://localhost:8001`) |
-| `IOT_API_KEY` | API key para autenticar comandos IoT |
-| `IOT_TIMEOUT` | Timeout para conexiones IoT (default: 5s) |
-| `OPEN_WEBUI_API_KEY` | API key para chatbot IA |
-| `OPEN_WEBUI_BASE_URL` | URL base del servicio LLM |
-| `OPEN_WEBUI_MODEL` | Modelo LLM a usar |
+### Microservicio IoT
+El backend actúa como un orquestador de seguridad. Cuando se solicita la posición de un vehículo, el backend recupera el 'hardware_id' del esquema del inquilino y realiza una petición autenticada al microservicio global de telemetría (FastAPI), asegurando que un inquilino nunca acceda a datos de hardware ajenos.
+
+### Inteligencia Artificial
+El sistema integra servicios de LLM para el soporte al usuario, manteniendo contextos aislados por rol y por inquilino para evitar fugas de información entre organizaciones.
 
 ---
 
-## Tests
+## Referencias Adicionales
 
-```bash
-# Ejecutar todos los tests
-php artisan test
-
-# Test específico
-php artisan test --filter=AuthTest
-
-# Con cobertura
-./vendor/bin/phpunit --coverage-html coverage/
-```
-
-| Archivo | Tests | Cobertura |
-|---------|-------|-----------|
-| AuthTest.php | 7 | Login, logout, registro, perfil |
-| VehicleTest.php | 8 | CRUD vehículos |
-| ReservationTest.php | 8 | Reservas y conflictos |
-| TicketTest.php | 9 | Sistema de soporte |
-| AdminMiddlewareTest.php | 7 | Protección rutas admin |
-| IoTControllerTest.php | 8 | Comandos IoT, health |
-| RateLimitingTest.php | 3 | Rate limiting |
-| ExampleTest.php | 1 | Test básico |
-| **Total** | **51+** | |
+Para más información detallada, consulte los siguientes documentos técnicos en la carpeta docs/:
+*   [API_ENDPOINTS.md](docs/API_ENDPOINTS.md): Lista completa de rutas y middlewares.
+*   [DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md): Estructura detallada de tablas y columnas.
+*   [DEPLOYMENT.md](docs/DEPLOYMENT.md): Guía de configuración para entornos de producción (Render).
+*   [TECH_STACK.md](docs/TECH_STACK.md): Stack tecnológico y librerías verificadas.
 
 ---
-
-## Integración con IoT
-
-El backend se comunica con el microservicio IoT (FastAPI) mediante `VehicleLocationService`:
-
-```php
-// Obtener ubicaciones de todos los vehículos
-$locations = $iotService->getLocations();
-
-// Encender/apagar vehículo
-$result = $iotService->turnOn($deviceId);
-$result = $iotService->turnOff($deviceId);
-
-// Health check del microservicio
-$isOnline = $iotService->healthCheck();
-
-// Vincular dispositivo a vehículo
-$result = $iotService->updateDevicePlate($deviceId, $licensePlate);
-```
-
----
-
-**Equipo de Desarrollo SIMS**
+**Ingeniería de Software SIMS - Abril 2026**
