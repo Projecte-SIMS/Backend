@@ -22,8 +22,25 @@ class AdminReservationController extends Controller
         $query = Reservation::with(['user', 'vehicle', 'trip']);
 
         // Filter by status if provided
-        if ($request->has('status')) {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        // Search in users, vehicles or ID
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('id', 'like', "%$search%")
+                  ->orWhereHas('user', function($uq) use ($search) {
+                      $uq->where('name', 'ilike', "%$search%")
+                         ->orWhere('email', 'ilike', "%$search%");
+                  })
+                  ->orWhereHas('vehicle', function($vq) use ($search) {
+                      $vq->where('license_plate', 'ilike', "%$search%")
+                         ->orWhere('brand', 'ilike', "%$search%")
+                         ->orWhere('model', 'ilike', "%$search%");
+                  });
+            });
         }
 
         return response()->json($query->orderBy('created_at', 'desc')->paginate(20));
@@ -56,6 +73,7 @@ class AdminReservationController extends Controller
 
         // Validate input
         $validated = $request->validate([
+            'user_id' => ['sometimes', 'exists:users,id'],
             'vehicle_id' => ['sometimes', 'exists:vehicles,id'],
             'scheduled_start' => ['sometimes', 'date'],
             'status' => ['sometimes', 'in:pending,active,completed,cancelled,expired'],

@@ -24,6 +24,7 @@ class UpdateVehicleRequest extends FormRequest
             'brand' => ['sometimes', 'string', 'max:100'],
             'model' => ['sometimes', 'string', 'max:100'],
             'active' => ['sometimes', 'boolean'],
+            'price_per_minute' => ['sometimes', 'numeric', 'min:0'],
         ];
     }
 

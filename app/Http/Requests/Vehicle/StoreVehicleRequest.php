@@ -18,6 +18,7 @@ class StoreVehicleRequest extends FormRequest
             'brand' => ['required', 'string', 'max:100'],
             'model' => ['required', 'string', 'max:100'],
             'active' => ['sometimes', 'boolean'],
+            'price_per_minute' => ['sometimes', 'numeric', 'min:0'],
         ];
     }
 

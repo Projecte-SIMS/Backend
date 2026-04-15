@@ -28,9 +28,10 @@ class TicketMessageController extends Controller
             'message' => $data['message'],
         ]);
         
-        if (!$ticket->active) {
-            $ticket->update(['active' => true]);
-        }
+        // Update ticket last activity and ensure it's active
+        $ticket->active = true;
+        $ticket->touch(); // Refreshes updated_at
+        $ticket->save();
 
         return response($msg, Response::HTTP_CREATED);
     }

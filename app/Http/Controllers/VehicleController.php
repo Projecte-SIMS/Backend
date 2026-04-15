@@ -37,7 +37,9 @@ class VehicleController extends Controller
 
         $query = Vehicle::query();
         $user = auth()->user();
-        $isAdminRequest = $request->segment(2) === 'admin';
+        
+        // Determinar si es una petición de administración
+        $isAdminRequest = $request->is('api/admin/*') || $request->is('admin/*');
         $isAdminUser = $user && ($user->hasRole('Admin') || $user->hasRole('admin'));
         $shouldShowAll = $isAdminUser && $isAdminRequest;
 
@@ -51,12 +53,19 @@ class VehicleController extends Controller
             });
         }
 
+        // Filtro por estado activo (solo si se proporciona)
+        if ($request->has('active') && $request->input('active') !== '') {
+            $query->where('active', filter_var($request->input('active'), FILTER_VALIDATE_BOOLEAN));
+        }
+
+        // Si no es admin viendo la lista completa, solo mostramos vehículos disponibles (active=false)
         if (!$shouldShowAll) {
             $query->where('active', false);
         }
 
-        $vehicles = $query->orderBy('created_at', 'desc')
-                          ->paginate($request->input('per_page', 15));
+        // Obtener todos los vehículos que cumplen los filtros básicos de base de datos
+        // Usamos get() en lugar de paginate() inicialmente para poder filtrar por el estado dinámico (IoT/Reservas)
+        $vehiclesList = $query->orderBy('created_at', 'desc')->get();
 
         $locations = $this->locationService->getLocations();
         
@@ -65,15 +74,18 @@ class VehicleController extends Controller
             ->get()
             ->groupBy('vehicle_id');
 
-        $vehicles->getCollection()->transform(function ($vehicle) use ($locations, $currentReservations, $user, $shouldShowAll) {
-            $location = $locations[$vehicle->license_plate] ?? null;
+        // Transformar la colección para calcular estados dinámicos
+        $transformedVehicles = $vehiclesList->map(function ($vehicle) use ($locations, $currentReservations, $user) {
+            $licensePlate = (string) $vehicle->license_plate;
+            $location = $locations[$licensePlate] ?? null;
             $reservation = $currentReservations->get($vehicle->id)?->first();
             
             $isOnline = (bool) ($location['online'] ?? false);
             $hasGPS = isset($location['latitude']) && isset($location['longitude']) && 
                       ((float)$location['latitude'] != 0 || (float)$location['longitude'] != 0);
             
-            $isMine = $reservation && $reservation->user_id === $user?->id;
+            $userId = $user ? $user->id : null;
+            $isMine = $reservation && $userId && $reservation->user_id == $userId;
             $isOccupied = ($location['active'] ?? false) === true;
 
             // Nuevo cálculo de status más preciso
@@ -82,7 +94,7 @@ class VehicleController extends Controller
             } elseif ($reservation) {
                 $status = 'reserved';
             } elseif (!$isOnline || !$hasGPS) {
-                $status = 'offline'; // Fuera de servicio técnico
+                $status = 'offline';
             } else {
                 $status = 'available';
             }
@@ -92,28 +104,47 @@ class VehicleController extends Controller
             $vehicle->setAttribute('mongo_active', $isOccupied);
             $vehicle->setAttribute('online', $isOnline);
             $vehicle->setAttribute('status', $status);
-            $vehicle->setAttribute('is_mine', $isMine);
+            $vehicle->setAttribute('is_mine', (bool) $isMine);
             $vehicle->setAttribute('iot_device_id', $location['device_id'] ?? null);
             
             return $vehicle;
         });
 
-        if (!$shouldShowAll) {
-            // Para clientes: Solo disponibles O el mío reservado, Y QUE TENGAN RELACIÓN EN MONGO (y estén ONLINE)
-            $filtered = $vehicles->getCollection()->filter(function ($v) {
-                // Consideramos que tiene relación válida si tiene coordenadas distintas de 0 y está online
-                $hasValidLocation = $v->latitude !== null && $v->longitude !== null && 
-                                   ($v->latitude != 0 || $v->longitude != 0);
-                $isOnline = $v->online === true;
-                $isAvailable = $v->status === 'available' || ($v->status === 'reserved' && $v->is_mine);
-                
-                return $hasValidLocation && $isOnline && $isAvailable;
-            })->values();
-            
-            $vehicles->setCollection($filtered);
+        // Aplicar filtro de estado dinámico si se solicita
+        if ($request->filled('status')) {
+            $statusFilter = $request->input('status');
+            $transformedVehicles = $transformedVehicles->filter(function($v) use ($statusFilter) {
+                return $v->getAttribute('status') === $statusFilter;
+            });
         }
 
-        return response()->json($vehicles);
+        if (!$shouldShowAll) {
+            // Para clientes: Solo disponibles O el mío reservado, Y QUE TENGAN RELACIÓN EN MONGO (y estén ONLINE)
+            $transformedVehicles = $transformedVehicles->filter(function ($v) {
+                // Consideramos que tiene relación válida si tiene coordenadas distintas de 0 y está online
+                $hasValidLocation = $v->getAttribute('latitude') !== null && $v->getAttribute('longitude') !== null && 
+                                   ($v->getAttribute('latitude') != 0 || $v->getAttribute('longitude') != 0);
+                $isOnline = $v->getAttribute('online') === true;
+                $isAvailable = $v->getAttribute('status') === 'available' || ($v->getAttribute('status') === 'reserved' && $v->getAttribute('is_mine'));
+                
+                return $hasValidLocation && $isOnline && $isAvailable;
+            });
+        }
+
+        // Paginar manualmente la colección resultante
+        $perPage = (int) $request->input('per_page', 15);
+        $page = max(1, (int) $request->input('page', 1));
+        $total = $transformedVehicles->count();
+        
+        $results = $transformedVehicles->slice(($page - 1) * $perPage, $perPage)->values();
+
+        return response()->json([
+            'data' => $results,
+            'current_page' => $page,
+            'last_page' => max(1, (int) ceil($total / $perPage)),
+            'per_page' => $perPage,
+            'total' => $total
+        ]);
     }
 
     /**
@@ -214,8 +245,8 @@ class VehicleController extends Controller
             $location = $locations[$vehicle->license_plate] ?? null;
             $reservation = $currentReservations->get($vehicle->id)?->first();
             
-            $isReservedByMe = $reservation && $reservation->user_id === $user->id;
-            $isReservedByOthers = $reservation && $reservation->user_id !== $user->id;
+            $isReservedByMe = $reservation && $user && $reservation->user_id === $user->id;
+            $isReservedByOthers = $reservation && (!$user || $reservation->user_id !== $user->id);
             
             // Determinar estado real
             $isOccupied = ($location['active'] ?? false) === true; // En marcha (Mongo)

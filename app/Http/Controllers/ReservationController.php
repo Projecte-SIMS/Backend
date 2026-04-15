@@ -104,9 +104,9 @@ class ReservationController extends Controller
                 ], 409);
             }
 
-            // Si no se envía hora, usamos "ahora"
+            // Si no se envía hora, usamos "ahora" en la zona horaria de la app
             $requestedStart = isset($validated['scheduled_start']) 
-                ? Carbon::parse($validated['scheduled_start']) 
+                ? Carbon::parse($validated['scheduled_start'])->setTimezone(config('app.timezone')) 
                 : now();
 
             // 4. Ventana de 10 minutos para activar

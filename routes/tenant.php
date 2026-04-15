@@ -29,8 +29,8 @@ use App\Http\Controllers\ChatbotController;
 */
 
 Route::middleware([
-    'api',
     'tenant.init',
+    'api',
     'tenant.billing.active',
 ])->prefix('api')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])
@@ -157,8 +157,8 @@ Route::middleware([
 
 // Web routes for tenant (optional, can be removed if not needed)
 Route::middleware([
-    'web',
     'tenant.init',
+    'web',
     'tenant.billing.active',
 ])->group(function () {
     Route::get('/tenant-info', function () {
