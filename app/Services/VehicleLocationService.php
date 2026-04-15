@@ -32,7 +32,14 @@ class VehicleLocationService
      */
     private function getTenantId(): string
     {
-        return function_exists('tenant') && tenant('id') ? (string) tenant('id') : 'default';
+        try {
+            if (function_exists('tenant') && tenant('id')) {
+                return (string) tenant('id');
+            }
+        } catch (\Exception $e) {
+            Log::debug('IoT: Could not determine tenant, using default');
+        }
+        return 'default';
     }
 
     /**
@@ -44,14 +51,20 @@ class VehicleLocationService
     {
         $tenantId = $this->getTenantId();
         try {
+            $url = "{$this->baseUrl}/api/{$tenantId}/devices";
             $response = Http::timeout($this->timeout)
                 ->withHeaders(['x-api-key' => $this->apiKey])
-                ->get("{$this->baseUrl}/api/{$tenantId}/devices");
+                ->get($url);
 
             if (!$response->successful()) {
-                Log::warning('IoT Microservice returned error', [
+                Log::warning('IoT Microservice error', [
+                    'url' => $url,
                     'status' => $response->status(),
+                    'body' => $response->body()
                 ]);
+                $this->microserviceAvailable = false;
+                return [];
+            }
                 $this->microserviceAvailable = false;
                 return [];
             }
