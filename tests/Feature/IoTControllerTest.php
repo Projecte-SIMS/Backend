@@ -89,7 +89,7 @@ class IoTControllerTest extends TestCase
     public function test_authenticated_user_can_list_iot_devices(): void
     {
         Http::fake([
-            '*/api/devices' => Http::response([
+            '*/api/default/devices' => Http::response([
                 [
                     'id' => '123',
                     'license_plate' => 'TEST-001',
@@ -109,7 +109,7 @@ class IoTControllerTest extends TestCase
     public function test_authenticated_user_can_get_single_device(): void
     {
         Http::fake([
-            '*/api/devices/123' => Http::response([
+            '*/api/default/devices/123' => Http::response([
                 'id' => '123',
                 'license_plate' => 'TEST-001',
                 'online' => true,
@@ -126,7 +126,7 @@ class IoTControllerTest extends TestCase
     public function test_admin_can_turn_on_device(): void
     {
         Http::fake([
-            '*/api/command' => Http::response(['result' => 'sent'], 200),
+            '*/api/default/command' => Http::response(['result' => 'sent'], 200),
         ]);
 
         $response = $this->withHeader('Authorization', "Bearer {$this->adminToken}")
@@ -139,7 +139,7 @@ class IoTControllerTest extends TestCase
     public function test_admin_can_turn_off_device(): void
     {
         Http::fake([
-            '*/api/command' => Http::response(['result' => 'sent'], 200),
+            '*/api/default/command' => Http::response(['result' => 'sent'], 200),
         ]);
 
         $response = $this->withHeader('Authorization', "Bearer {$this->adminToken}")
@@ -167,7 +167,7 @@ class IoTControllerTest extends TestCase
     public function test_ping_device_returns_online_status(): void
     {
         Http::fake([
-            '*/api/ping/123' => Http::response(['online' => true], 200),
+            '*/api/default/ping/123' => Http::response(['online' => true], 200),
         ]);
 
         $response = $this->withHeader('Authorization', "Bearer {$this->clientToken}")
@@ -180,7 +180,7 @@ class IoTControllerTest extends TestCase
     public function test_admin_can_send_custom_command(): void
     {
         Http::fake([
-            '*/api/command' => Http::response(['result' => 'sent'], 200),
+            '*/api/default/command' => Http::response(['result' => 'sent'], 200),
         ]);
 
         $response = $this->withHeader('Authorization', "Bearer {$this->adminToken}")
@@ -195,7 +195,7 @@ class IoTControllerTest extends TestCase
     public function test_admin_can_get_unlinked_devices(): void
     {
         Http::fake([
-            '*/api/devices' => Http::response([
+            '*/api/default/devices' => Http::response([
                 ['id' => '123', 'license_plate' => null, 'online' => true],
                 ['id' => '456', 'license_plate' => null, 'online' => false],
             ], 200),

@@ -165,7 +165,7 @@ class ReservationTest extends TestCase
         Reservation::factory()->count(5)->create(['vehicle_id' => $vehicle->id]);
 
         $response = $this->withHeader('Authorization', "Bearer {$this->adminToken}")
-                         ->getJson('/api/admin/reservations');
+                         ->getJson('/api/admin/bookings');
 
         $response->assertStatus(200);
     }
@@ -293,7 +293,7 @@ class ReservationTest extends TestCase
         ]);
 
         $response = $this->withHeader('Authorization', "Bearer {$this->adminToken}")
-                         ->postJson("/api/admin/reservations/{$reservation->id}/force-finish");
+                         ->postJson("/api/admin/bookings/{$reservation->id}/force-finish");
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('reservations', [
@@ -315,7 +315,7 @@ class ReservationTest extends TestCase
         ]);
 
         $response = $this->withHeader('Authorization', "Bearer {$this->adminToken}")
-                         ->postJson("/api/admin/reservations/{$reservation->id}/force-finish", [
+                         ->postJson("/api/admin/bookings/{$reservation->id}/force-finish", [
                              'custom_amount' => 5.00
                          ]);
 
