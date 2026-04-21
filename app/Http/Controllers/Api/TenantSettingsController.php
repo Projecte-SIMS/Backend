@@ -42,10 +42,10 @@ class TenantSettingsController extends Controller
         ]);
 
         if (isset($validated['company_theme'])) {
+            // Forzamos el atributo en el modelo y guardamos
             $tenant->company_theme = $validated['company_theme'];
+            $tenant->save();
         }
-
-        $tenant->save();
 
         return response()->json([
             'success' => true,
