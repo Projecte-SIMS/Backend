@@ -15,6 +15,7 @@ use App\Http\Controllers\TicketMessageController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\AdminReservationController;
 use App\Http\Controllers\IoTController;
+use App\Http\Controllers\Api\TenantSettingsController;
 
 use App\Http\Controllers\ChatbotController;
 
@@ -119,6 +120,11 @@ Route::middleware([
             // Vehicles
             Route::get('vehicles/map', [VehicleController::class, 'adminMap']);
             Route::apiResource('vehicles', VehicleController::class);
+
+            // Configuración del Tenant
+            Route::get('settings', [TenantSettingsController::class, 'index']);
+            Route::patch('settings', [TenantSettingsController::class, 'update']);
+
             // Tickets
             Route::get('tickets', [TicketController::class, 'index']);
             Route::post('tickets', [TicketController::class, 'store']);
