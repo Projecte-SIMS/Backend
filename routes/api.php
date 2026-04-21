@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BillingController;
 use App\Http\Controllers\Api\PublicTenantOnboardingController;
+use App\Http\Controllers\Api\CentralSettingsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,6 +29,10 @@ Route::get('/health', function () {
     ]);
 });
 
+// Public tenant info (for theme and identification)
+Route::get('/public/tenants/{id}/settings', [PublicTenantOnboardingController::class, 'getPublicSettings']);
+Route::get('/public/settings', [CentralSettingsController::class, 'index']);
+
 // Central authentication for super admin (no domain restriction)
 Route::post('/central/login', [AuthController::class, 'centralLogin']);
 Route::post('/central/billing/webhook/stripe', [BillingController::class, 'stripeWebhook']);
@@ -42,9 +47,14 @@ Route::middleware('central.admin')->prefix('tenants')->group(function () {
     Route::get('/{id}/verify', [TenantController::class, 'verify']);
     Route::post('/{id}/domains', [TenantController::class, 'addDomain']);
     Route::post('/{id}/reset-password', [TenantController::class, 'resetAdminPassword']);
+    Route::patch('/{id}/theme', [TenantController::class, 'updateTheme']);
     Route::get('/{id}/billing/status', [BillingController::class, 'status']);
     Route::post('/{id}/billing/checkout-session', [BillingController::class, 'checkoutSession']);
     Route::post('/{id}/billing/portal-session', [BillingController::class, 'portalSession']);
     Route::post('/{id}/billing/demo-profile', [BillingController::class, 'updateDemoProfile']);
     Route::delete('/{id}', [TenantController::class, 'destroy']);
+});
+
+Route::middleware('central.admin')->prefix('settings')->group(function () {
+    Route::post('/update', [CentralSettingsController::class, 'update']);
 });

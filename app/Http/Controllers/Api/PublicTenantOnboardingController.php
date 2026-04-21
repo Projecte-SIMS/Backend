@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Models\TenantOwnerProfile;
 use App\Services\Billing\StripeBillingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,6 +37,14 @@ class PublicTenantOnboardingController extends Controller
                 'billing_email' => 'nullable|email|max:180',
                 'payment_method' => 'nullable|in:card,sepa,transfer,wallet',
                 'country' => 'nullable|string|size:2',
+                'theme' => 'nullable|string|max:30',
+                // New entity/personal info fields
+                'entity_type' => 'required|in:individual,company',
+                'tax_id' => 'required|string|max:20', // NIF/CIF
+                'phone' => 'nullable|string|max:20',
+                'address' => 'nullable|string|max:255',
+                'city' => 'nullable|string|max:100',
+                'postal_code' => 'nullable|string|max:20',
             ]);
 
             $tenantId = $this->reserveTenantId($validated['company_slug'] ?? $validated['company_name']);
@@ -64,10 +73,26 @@ class PublicTenantOnboardingController extends Controller
 
             $monthlyAmountCents = $validated['plan'] === 'pro' ? 7900 : 4900;
             $tenant->billing_monthly_amount_cents = $monthlyAmountCents;
-            $tenant->setAttribute('company_name', $validated['company_name']);
+            
+            // Technical core attributes
             $tenant->setAttribute('company_plan', $validated['plan']);
+            $tenant->setAttribute('company_theme', $validated['theme'] ?? 'indigo');
             $tenant->setAttribute('company_onboarding_source', 'self_service_demo');
             $tenant->save();
+
+            // Create separate Owner Profile
+            TenantOwnerProfile::create([
+                'tenant_id' => $tenant->id,
+                'owner_name' => $validated['admin_name'],
+                'owner_email' => $validated['admin_email'],
+                'entity_type' => $validated['entity_type'],
+                'company_name' => $validated['company_name'],
+                'tax_id' => $validated['tax_id'],
+                'phone' => $validated['phone'],
+                'address' => $validated['address'],
+                'city' => $validated['city'],
+                'postal_code' => $validated['postal_code'],
+            ]);
 
             $tenant->run(function () use ($validated) {
                 $admin = User::role('Admin')->first() ?? User::where('email', 'admin@sims.com')->first();
@@ -103,8 +128,8 @@ class PublicTenantOnboardingController extends Controller
                 'card_last4' => $selectedMethod === 'card' ? '4242' : null,
                 'expiry_month' => $selectedMethod === 'card' ? 12 : null,
                 'expiry_year' => $selectedMethod === 'card' ? ((int) now()->format('Y') + 3) : null,
-                'city' => 'Madrid',
-                'address_line' => 'Calle Demo 123',
+                'city' => $validated['city'] ?? 'Madrid',
+                'address_line' => $validated['address'] ?? 'Calle Demo 123',
             ]);
 
             return response()->json([
@@ -131,6 +156,27 @@ class PublicTenantOnboardingController extends Controller
                 'error' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
+    }
+
+    public function getPublicSettings(string $id): JsonResponse
+    {
+        $tenant = Tenant::with('ownerProfile')->find($id);
+        
+        if (!$tenant) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tenant no encontrado',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $tenant->id,
+                'name' => $tenant->ownerProfile->company_name ?? $tenant->id,
+                'theme' => $tenant->company_theme ?? 'indigo',
+            ],
+        ]);
     }
 
     private function reserveTenantId(string $input): string

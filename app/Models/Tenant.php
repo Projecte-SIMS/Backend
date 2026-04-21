@@ -7,9 +7,20 @@ use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
 
+use App\Models\TenantOwnerProfile;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+
 class Tenant extends BaseTenant implements TenantWithDatabase
 {
     use HasDatabase, HasDomains;
+
+    /**
+     * Get the owner profile associated with the tenant.
+     */
+    public function ownerProfile(): HasOne
+    {
+        return $this->hasOne(TenantOwnerProfile::class, 'tenant_id', 'id');
+    }
 
     /**
      * Get custom columns for the tenants table
@@ -28,6 +39,9 @@ class Tenant extends BaseTenant implements TenantWithDatabase
             'billing_current_period_end',
             'billing_last_invoice_at',
             'billing_last_invoice_status',
+            'company_plan',
+            'company_theme',
+            'company_onboarding_source',
             'data',
         ];
     }

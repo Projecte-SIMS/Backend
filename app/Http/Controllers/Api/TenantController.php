@@ -23,7 +23,7 @@ class TenantController extends Controller
      */
     public function index()
     {
-        $tenants = Tenant::with('domains')->get();
+        $tenants = Tenant::with(['domains', 'ownerProfile'])->get();
         
         return response()->json([
             'success' => true,
@@ -37,6 +37,7 @@ class TenantController extends Controller
                     'domains' => $tenant->domains->pluck('domain'),
                     'admin_email' => $adminInfo['email'] ?? 'admin@sims.com',
                     'admin_username' => $adminInfo['username'] ?? 'admin',
+                    'owner_profile' => $tenant->ownerProfile,
                     'created_at' => $tenant->created_at,
                     'updated_at' => $tenant->updated_at,
                     'billing' => $this->buildBillingSummary($tenant),
@@ -290,7 +291,7 @@ class TenantController extends Controller
      */
     public function show(string $id)
     {
-        $tenant = Tenant::with('domains')->find($id);
+        $tenant = Tenant::with(['domains', 'ownerProfile'])->find($id);
 
         if (!$tenant) {
             return response()->json([
@@ -310,10 +311,44 @@ class TenantController extends Controller
                 'admin_email' => $adminInfo['email'],
                 'admin_username' => $adminInfo['username'],
                 'admin_name' => $adminInfo['name'],
+                'owner_profile' => $tenant->ownerProfile,
+                'company_plan' => $tenant->company_plan,
+                'company_theme' => $tenant->company_theme,
                 'created_at' => $tenant->created_at,
                 'updated_at' => $tenant->updated_at,
                 'billing' => $this->buildBillingSummary($tenant),
                 'stats' => $stats,
+            ],
+        ]);
+    }
+
+    /**
+     * Update tenant theme
+     */
+    public function updateTheme(Request $request, string $id)
+    {
+        $tenant = Tenant::find($id);
+
+        if (!$tenant) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tenant no encontrado',
+            ], 404);
+        }
+
+        $request->validate([
+            'theme' => 'required|string|max:30',
+        ]);
+
+        $tenant->company_theme = $request->theme;
+        $tenant->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tema del inquilino actualizado',
+            'data' => [
+                'id' => $tenant->id,
+                'theme' => $tenant->company_theme,
             ],
         ]);
     }
