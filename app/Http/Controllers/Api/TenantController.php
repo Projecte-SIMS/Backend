@@ -38,6 +38,8 @@ class TenantController extends Controller
                     'admin_email' => $adminInfo['email'] ?? 'admin@sims.com',
                     'admin_username' => $adminInfo['username'] ?? 'admin',
                     'owner_profile' => $tenant->ownerProfile,
+                    'company_theme' => $tenant->company_theme,
+                    'company_plan' => $tenant->company_plan,
                     'created_at' => $tenant->created_at,
                     'updated_at' => $tenant->updated_at,
                     'billing' => $this->buildBillingSummary($tenant),
