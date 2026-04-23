@@ -41,6 +41,7 @@ Route::post('/public/tenant-onboarding/demo-complete', [PublicTenantOnboardingCo
 
 // Tenant management routes (protected with central admin middleware)
 Route::middleware('central.admin')->prefix('tenants')->group(function () {
+    Route::get('/stats/global', [TenantController::class, 'getGlobalStats']);
     Route::get('/', [TenantController::class, 'index']);
     Route::post('/', [TenantController::class, 'store']);
     Route::get('/{id}', [TenantController::class, 'show']);

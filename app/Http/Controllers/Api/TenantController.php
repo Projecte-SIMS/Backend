@@ -55,6 +55,7 @@ class TenantController extends Controller
             'vehicles_count' => 0,
             'reservations_count' => 0,
             'tickets_count' => 0,
+            'users_count' => 0,
         ];
 
         try {
@@ -63,6 +64,7 @@ class TenantController extends Controller
                 $stats['vehicles_count'] = \DB::connection('tenant')->table('vehicles')->whereNull('deleted_at')->count();
                 $stats['reservations_count'] = \DB::connection('tenant')->table('reservations')->whereNull('deleted_at')->count();
                 $stats['tickets_count'] = \DB::connection('tenant')->table('tickets')->whereNull('deleted_at')->count();
+                $stats['users_count'] = \DB::connection('tenant')->table('users')->whereNull('deleted_at')->count();
             });
         } catch (\Exception $e) {
             // Probablemente el esquema aún no existe o no tiene las tablas
@@ -70,6 +72,58 @@ class TenantController extends Controller
         }
 
         return $stats;
+    }
+
+    /**
+     * Get global statistics across all tenants
+     */
+    public function getGlobalStats()
+    {
+        $tenants = Tenant::all();
+        $globalStats = [
+            'total_tenants' => $tenants->count(),
+            'total_users' => 0,
+            'total_vehicles' => 0,
+            'total_reservations' => 0,
+            'total_tickets' => 0,
+            'total_mrr_cents' => 0,
+            'top_tenant_by_vehicles' => null,
+            'top_tenant_by_users' => null,
+        ];
+
+        $maxVehicles = -1;
+        $maxUsers = -1;
+
+        foreach ($tenants as $tenant) {
+            $stats = $this->getTenantStats($tenant);
+            
+            $globalStats['total_users'] += $stats['users_count'];
+            $globalStats['total_vehicles'] += $stats['vehicles_count'];
+            $globalStats['total_reservations'] += $stats['reservations_count'];
+            $globalStats['total_tickets'] += $stats['tickets_count'];
+            $globalStats['total_mrr_cents'] += (int) ($tenant->billing_monthly_amount_cents ?? 0);
+
+            if ($stats['vehicles_count'] > $maxVehicles) {
+                $maxVehicles = $stats['vehicles_count'];
+                $globalStats['top_tenant_by_vehicles'] = [
+                    'id' => $tenant->id,
+                    'count' => $maxVehicles
+                ];
+            }
+
+            if ($stats['users_count'] > $maxUsers) {
+                $maxUsers = $stats['users_count'];
+                $globalStats['top_tenant_by_users'] = [
+                    'id' => $tenant->id,
+                    'count' => $maxUsers
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $globalStats
+        ]);
     }
 
     /**
