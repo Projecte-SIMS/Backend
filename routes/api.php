@@ -39,9 +39,19 @@ Route::post('/central/billing/webhook/stripe', [BillingController::class, 'strip
 Route::post('/public/tenant-onboarding/demo-complete', [PublicTenantOnboardingController::class, 'demoComplete'])
     ->middleware('throttle:onboarding');
 
+use App\Http\Controllers\Api\FleetManagementController;
+
 // Tenant management routes (protected with central admin middleware)
 Route::middleware('central.admin')->prefix('tenants')->group(function () {
     Route::get('/stats/global', [TenantController::class, 'getGlobalStats']);
+    
+    // IoT Fleet Management
+    Route::get('/fleet/discover', [FleetManagementController::class, 'discover']);
+    Route::get('/fleet/devices', [FleetManagementController::class, 'index']);
+    Route::post('/fleet/devices', [FleetManagementController::class, 'store']);
+    Route::post('/fleet/devices/{id}/action', [FleetManagementController::class, 'executeAction']);
+    Route::delete('/fleet/devices/{id}', [FleetManagementController::class, 'destroy']);
+
     Route::get('/', [TenantController::class, 'index']);
     Route::post('/', [TenantController::class, 'store']);
     Route::get('/{id}', [TenantController::class, 'show']);
