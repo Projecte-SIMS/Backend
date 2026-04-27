@@ -609,6 +609,7 @@ class StripeBillingService
         }
 
         if (!$this->isConfigured()) {
+            // Modo Demo: devolvemos una URL simulada
             return ['url' => $returnUrl . '?demo_portal=true'];
         }
 

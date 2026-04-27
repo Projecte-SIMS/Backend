@@ -76,6 +76,13 @@ class UserWalletController extends Controller
     {
         $user = Auth::user();
 
+        if (!$user->stripe_customer_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Debes realizar al menos una recarga para configurar un método de pago.',
+            ], 400);
+        }
+
         try {
             $session = $this->stripeService->createUserPortalSession(
                 $user,
@@ -89,8 +96,8 @@ class UserWalletController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
-            ], 400);
+                'message' => 'Error al acceder al portal: ' . $e->getMessage(),
+            ], 500);
         }
     }
 }
