@@ -39,4 +39,4 @@ php artisan serve
 El sistema inyecta el contexto de base de datos basándose en la cabecera `X-Tenant`. No es posible acceder a datos de una organización sin el token Sanctum emitido para ese esquema específico.
 
 ---
-*Para más detalles, consulta el [README principal](../README.md).*
+*Para más detalles, consulta el [README principal](https://github.com/Projecte-SIMS/.github/blob/main/profile/readme.md).*
