@@ -102,6 +102,9 @@ Route::middleware([
         // Cartera (Wallet)
         Route::get('/wallet', [UserWalletController::class, 'index']);
         Route::post('/wallet/topup', [UserWalletController::class, 'topup']);
+        Route::post('/wallet/portal', [UserWalletController::class, 'portal']);
+
+        // Settings (ELIMINADO DE AQUÍ)
 
 
         // IoT endpoints (lectura para usuarios autenticados)

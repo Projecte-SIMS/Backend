@@ -79,6 +79,13 @@ class ReservationController extends Controller
 
         $user = $request->user();
 
+        // 0. Validar Saldo y Método de Pago
+        if ($user->wallet_balance <= 0 && !$user->stripe_customer_id) {
+            return response()->json([
+                'message' => 'Debes realizar una recarga inicial para vincular una tarjeta antes de reservar.'
+            ], 402); // 402 Payment Required
+        }
+
         // 1. Limpiar reservas caducadas del usuario
         $this->cleanupExpiredReservations($user->id);
 

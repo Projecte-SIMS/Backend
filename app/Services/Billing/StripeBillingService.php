@@ -65,46 +65,47 @@ class StripeBillingService
 
     public function createUserTopUpSession(Tenant $tenant, User $user, int $amountCents, string $successUrl, string $cancelUrl): array
     {
-        if (!$this->isConfigured()) {
-            if ($this->isDemoMode() || app()->environment(['local', 'development'])) {
-                $user->increment('wallet_balance', $amountCents);
-                $user->walletTransactions()->create([
-                    'amount_cents' => $amountCents,
-                    'type' => 'credit',
-                    'description' => 'Recarga de saldo (Modo Demo)',
-                ]);
-                return [
-                    'id' => 'cs_demo_user_' . $user->id . '_' . time(),
-                    'url' => $this->appendQueryParam($successUrl, 'billing_demo', 'topup_success'),
-                ];
+        if ($this->isConfigured()) {
+            $payload = [
+                'mode' => 'payment',
+                'success_url' => $this->appendQueryParam($successUrl, 'success', 'true'),
+                'cancel_url' => $this->appendQueryParam($cancelUrl, 'cancel', 'true'),
+                'line_items[0][price_data][currency]' => 'eur',
+                'line_items[0][price_data][product_data][name]' => 'Recarga de Saldo - SIMS',
+                'line_items[0][price_data][unit_amount]' => $amountCents,
+                'line_items[0][quantity]' => 1,
+                'payment_intent_data[setup_future_usage]' => 'off_session',
+                'metadata[tenant_id]' => $tenant->id,
+                'metadata[user_id]' => $user->id,
+                'metadata[type]' => 'wallet_topup',
+            ];
+
+            if ($user->stripe_customer_id) {
+                $payload['customer'] = $user->stripe_customer_id;
             }
-            throw new RuntimeException('Stripe no está configurado en el backend.');
+
+            $response = $this->stripePost('/checkout/sessions', $payload);
+
+            return [
+                'id' => Arr::get($response, 'id'),
+                'url' => Arr::get($response, 'url'),
+            ];
         }
 
-        $payload = [
-            'mode' => 'payment',
-            'success_url' => $successUrl,
-            'cancel_url' => $cancelUrl,
-            'line_items[0][price_data][currency]' => 'eur',
-            'line_items[0][price_data][product_data][name]' => 'Recarga de Saldo - SIMS',
-            'line_items[0][price_data][unit_amount]' => $amountCents,
-            'line_items[0][quantity]' => 1,
-            'payment_intent_data[setup_future_usage]' => 'off_session',
-            'metadata[tenant_id]' => $tenant->id,
-            'metadata[user_id]' => $user->id,
-            'metadata[type]' => 'wallet_topup',
-        ];
-
-        if ($user->stripe_customer_id) {
-            $payload['customer'] = $user->stripe_customer_id;
+        if ($this->isDemoMode() || app()->environment(['local', 'development'])) {
+            $user->increment('wallet_balance', $amountCents);
+            $user->walletTransactions()->create([
+                'amount_cents' => $amountCents,
+                'type' => 'credit',
+                'description' => 'Recarga de saldo (Modo Demo)',
+            ]);
+            return [
+                'id' => 'cs_demo_user_' . $user->id . '_' . time(),
+                'url' => $this->appendQueryParam($successUrl, 'success', 'true'),
+            ];
         }
 
-        $response = $this->stripePost('/checkout/sessions', $payload);
-
-        return [
-            'id' => Arr::get($response, 'id'),
-            'url' => Arr::get($response, 'url'),
-        ];
+        throw new RuntimeException('Stripe no está configurado en el backend.');
     }
 
     public function chargeUserDebt(User $user, int $amountCents): bool
@@ -598,6 +599,27 @@ class StripeBillingService
         return [
             'id' => 'bps_demo_' . $tenant->id . '_' . $now->timestamp,
             'url' => $this->appendQueryParam($returnUrl, 'billing_demo', 'payment_info_updated'),
+        ];
+    }
+
+    public function createUserPortalSession(User $user, string $returnUrl): array
+    {
+        if (!$user->stripe_customer_id) {
+            throw new RuntimeException('No tienes ningún método de pago configurado. Realiza una recarga primero.');
+        }
+
+        if (!$this->isConfigured()) {
+            return ['url' => $returnUrl . '?demo_portal=true'];
+        }
+
+        $response = $this->stripePost('/billing_portal/sessions', [
+            'customer' => $user->stripe_customer_id,
+            'return_url' => $returnUrl,
+        ]);
+
+        return [
+            'id' => Arr::get($response, 'id'),
+            'url' => Arr::get($response, 'url'),
         ];
     }
 

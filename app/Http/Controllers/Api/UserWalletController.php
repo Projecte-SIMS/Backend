@@ -28,6 +28,7 @@ class UserWalletController extends Controller
             'success' => true,
             'balance' => $user->wallet_balance,
             'formatted_balance' => $user->formatted_balance,
+            'has_payment_method' => !empty($user->stripe_customer_id),
             'transactions' => $user->walletTransactions()->latest()->take(50)->get(),
         ]);
     }
@@ -65,6 +66,31 @@ class UserWalletController extends Controller
                 'success' => false,
                 'message' => 'Error al crear la sesión de pago: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * Get a link to the Stripe Customer Portal for managing payment methods.
+     */
+    public function portal(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        try {
+            $session = $this->stripeService->createUserPortalSession(
+                $user,
+                $request->return_url ?: (env('APP_URL') . '/wallet')
+            );
+
+            return response()->json([
+                'success' => true,
+                'url' => $session['url'],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
         }
     }
 }
