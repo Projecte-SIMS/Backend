@@ -54,11 +54,6 @@ jobs:
           docker buildx build --platform linux/amd64 -t sims-backend:latest-amd64 --load .
           docker save -o sims-backend-amd64.tar sims-backend:latest-amd64
 
-      - name: Build and Pack Docker Image (ARM64 - Apple Silicon M1/M2/M3)
-        run: |
-          docker buildx build --platform linux/arm64 -t sims-backend:latest-arm64 --load .
-          docker save -o sims-backend-arm64.tar sims-backend:latest-arm64
-
       - name: Create or Update Latest Release
         uses: softprops/action-gh-release@v2
         with:
@@ -66,6 +61,5 @@ jobs:
           name: Latest Production Build
           files: |
             sims-backend-amd64.tar
-            sims-backend-arm64.tar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
