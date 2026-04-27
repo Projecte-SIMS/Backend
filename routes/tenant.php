@@ -18,6 +18,7 @@ use App\Http\Controllers\IoTController;
 use App\Http\Controllers\Api\TenantSettingsController;
 
 use App\Http\Controllers\ChatbotController;
+use App\Http\Controllers\Api\UserWalletController;
 
 /*
 |--------------------------------------------------------------------------
@@ -96,7 +97,12 @@ Route::middleware([
         Route::post('reservations/{reservation}/cancel', [ReservationController::class, 'cancel']);
         Route::post('reservations/{reservation}/on', [ReservationController::class, 'turnOn']);
         Route::post('reservations/{reservation}/off', [ReservationController::class, 'turnOff']);
-        Route::post('reservations/{reservation}/force-finish', [ReservationController::class, 'forceFinish']);
+        Route::post('/reservations/{reservation}/force-finish', [ReservationController::class, 'forceFinish']);
+
+        // Cartera (Wallet)
+        Route::get('/wallet', [UserWalletController::class, 'index']);
+        Route::post('/wallet/topup', [UserWalletController::class, 'topup']);
+
 
         // IoT endpoints (lectura para usuarios autenticados)
         Route::prefix('iot')->group(function () {

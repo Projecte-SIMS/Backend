@@ -11,15 +11,18 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Services\VehicleLocationService;
+use App\Services\Billing\StripeBillingService;
 use Illuminate\Http\JsonResponse;
 
 class ReservationController extends Controller
 {
     private VehicleLocationService $iotService;
+    private StripeBillingService $stripeService;
 
-    public function __construct(VehicleLocationService $iotService)
+    public function __construct(VehicleLocationService $iotService, StripeBillingService $stripeService)
     {
         $this->iotService = $iotService;
+        $this->stripeService = $stripeService;
     }
 
     public function index()
@@ -214,6 +217,7 @@ class ReservationController extends Controller
         
         $pricePerMinute = (float) ($reservation->vehicle->price_per_minute ?? 0.15);
         $amount = (float) round($minutes * $pricePerMinute, 2);
+        $amountCents = (int) ($amount * 100);
 
         // Obtener resumen de ruta antes de limpiar
         $routeData = [];
@@ -231,21 +235,47 @@ class ReservationController extends Controller
             \Log::error("Failed to get route summary: " . $e->getMessage());
         }
 
-        DB::transaction(function () use ($reservation, $trip, $end, $amount, $minutes) {
+        $user = Auth::user();
+
+        DB::transaction(function () use ($reservation, $trip, $end, $amount, $minutes, $user, $amountCents) {
             $trip->update([
                 'engine_stopped_at' => $end,
                 'total_amount' => $amount,
                 'minutes_driven' => $minutes
             ]);
+            
+            // 1. Registrar el débito del viaje en la cartera
+            $user->walletTransactions()->create([
+                'amount_cents' => $amountCents,
+                'type' => 'debit',
+                'description' => "Cobro por viaje: {$reservation->vehicle->license_plate}",
+                'reference_id' => (string) $trip->id,
+            ]);
+
+            // 2. Restar del saldo (puede quedar en negativo)
+            $user->decrement('wallet_balance', $amountCents);
+
             $reservation->update(['status' => 'completed']);
             // Liberar vehículo en Postgres
             $reservation->vehicle()->update(['active' => false]);
         });
 
+        // 3. Si el saldo es negativo, intentar cobro automático a la tarjeta guardada
+        $user->refresh();
+        $wasDebtCollected = false;
+        if ($user->wallet_balance < 0) {
+            $debtCents = abs($user->wallet_balance);
+            if ($this->stripeService->chargeUserDebt($user, $debtCents)) {
+                $wasDebtCollected = true;
+            }
+        }
+
         return response()->json([
             'message' => 'Trip finished.',
             'minutes' => $minutes,
             'cost' => $amount . '€',
+            'wallet_balance' => $user->wallet_balance,
+            'debt_collected' => $wasDebtCollected,
             'summary' => [
                 'avg_speed' => round($avgSpeed, 1),
                 'points' => $routeData

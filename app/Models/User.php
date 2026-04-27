@@ -46,7 +46,9 @@ class User extends Authenticatable
         'username',
         'email',
         'password',
-        'active'
+        'active',
+        'wallet_balance',
+        'stripe_customer_id'
     ];
 
     /**
@@ -57,6 +59,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'stripe_customer_id'
     ];
 
     /**
@@ -79,8 +82,26 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'active' => 'boolean',
+            'wallet_balance' => 'integer',
         ];
     }
+
+    /**
+     * Get the user's wallet transactions.
+     */
+    public function walletTransactions()
+    {
+        return $this->hasMany(WalletTransaction::class);
+    }
+
+    /**
+     * Get formatted balance (e.g. 10.50 €)
+     */
+    public function getFormattedBalanceAttribute(): string
+    {
+        return number_format($this->wallet_balance / 100, 2, ',', '.') . ' €';
+    }
+
     public function reservations()
     {
         return $this->hasMany(Reservation::class);

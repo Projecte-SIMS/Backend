@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Billing;
 
 use App\Models\Tenant;
+use App\Models\User;
+use App\Models\WalletTransaction;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -59,6 +61,104 @@ class StripeBillingService
             'id' => Arr::get($response, 'id'),
             'url' => Arr::get($response, 'url'),
         ];
+    }
+
+    public function createUserTopUpSession(Tenant $tenant, User $user, int $amountCents, string $successUrl, string $cancelUrl): array
+    {
+        if (!$this->isConfigured()) {
+            if ($this->isDemoMode() || app()->environment(['local', 'development'])) {
+                $user->increment('wallet_balance', $amountCents);
+                $user->walletTransactions()->create([
+                    'amount_cents' => $amountCents,
+                    'type' => 'credit',
+                    'description' => 'Recarga de saldo (Modo Demo)',
+                ]);
+                return [
+                    'id' => 'cs_demo_user_' . $user->id . '_' . time(),
+                    'url' => $this->appendQueryParam($successUrl, 'billing_demo', 'topup_success'),
+                ];
+            }
+            throw new RuntimeException('Stripe no está configurado en el backend.');
+        }
+
+        $payload = [
+            'mode' => 'payment',
+            'success_url' => $successUrl,
+            'cancel_url' => $cancelUrl,
+            'line_items[0][price_data][currency]' => 'eur',
+            'line_items[0][price_data][product_data][name]' => 'Recarga de Saldo - SIMS',
+            'line_items[0][price_data][unit_amount]' => $amountCents,
+            'line_items[0][quantity]' => 1,
+            'payment_intent_data[setup_future_usage]' => 'off_session',
+            'metadata[tenant_id]' => $tenant->id,
+            'metadata[user_id]' => $user->id,
+            'metadata[type]' => 'wallet_topup',
+        ];
+
+        if ($user->stripe_customer_id) {
+            $payload['customer'] = $user->stripe_customer_id;
+        }
+
+        $response = $this->stripePost('/checkout/sessions', $payload);
+
+        return [
+            'id' => Arr::get($response, 'id'),
+            'url' => Arr::get($response, 'url'),
+        ];
+    }
+
+    public function chargeUserDebt(User $user, int $amountCents): bool
+    {
+        if (!$user->stripe_customer_id) {
+            return false;
+        }
+
+        if (!$this->isConfigured()) {
+            $user->increment('wallet_balance', $amountCents);
+            $user->walletTransactions()->create([
+                'amount_cents' => $amountCents,
+                'type' => 'credit',
+                'description' => 'Cobro automático de deuda (Modo Demo)',
+            ]);
+            return true;
+        }
+
+        try {
+            $paymentMethods = $this->stripeGet("/customers/{$user->stripe_customer_id}/payment_methods", ['type' => 'card']);
+            $pmId = Arr::get($paymentMethods, 'data.0.id');
+
+            if (!$pmId) {
+                return false;
+            }
+
+            $response = $this->stripePost('/payment_intents', [
+                'amount' => $amountCents,
+                'currency' => 'eur',
+                'customer' => $user->stripe_customer_id,
+                'payment_method' => $pmId,
+                'off_session' => 'true',
+                'confirm' => 'true',
+                'description' => 'Cobro automático de deuda SIMS',
+                'metadata[user_id]' => $user->id,
+            ]);
+
+            $success = Arr::get($response, 'status') === 'succeeded';
+            
+            if ($success) {
+                $user->increment('wallet_balance', $amountCents);
+                $user->walletTransactions()->create([
+                    'amount_cents' => $amountCents,
+                    'type' => 'credit',
+                    'description' => 'Cobro automático de deuda exitoso',
+                    'reference_id' => Arr::get($response, 'id'),
+                ]);
+            }
+
+            return $success;
+        } catch (\Exception $e) {
+            \Log::error('Error charging user debt: ' . $e->getMessage());
+            return false;
+        }
     }
 
     public function createPortalSession(Tenant $tenant, string $returnUrl): array
@@ -134,8 +234,9 @@ class StripeBillingService
         }
 
         $tenant = $this->resolveTenantFromStripeObject($object);
+        $userId = Arr::get($object, 'metadata.user_id');
 
-        DB::transaction(function () use ($event, $eventId, $eventType, $object, $tenant): void {
+        DB::transaction(function () use ($event, $eventId, $eventType, $object, $tenant, $userId): void {
             DB::table('billing_events')->insert([
                 'provider' => 'stripe',
                 'provider_event_id' => $eventId,
@@ -147,6 +248,10 @@ class StripeBillingService
                 'updated_at' => now(),
             ]);
 
+            if ($eventType === 'checkout.session.completed' && $userId) {
+                $this->handleUserTopUp($object, $tenant, (string) $userId);
+            }
+
             if (str_starts_with($eventType, 'customer.subscription.')) {
                 $this->syncSubscription($object, $tenant);
             }
@@ -155,6 +260,37 @@ class StripeBillingService
                 $this->syncInvoice($object, $tenant);
             }
         });
+    }
+
+    private function handleUserTopUp(array $session, ?Tenant $tenant, string $userId): void
+    {
+        if (!$tenant) {
+            return;
+        }
+
+        // Initialize tenant context
+        tenancy()->initialize($tenant);
+
+        $user = User::find($userId);
+        if (!$user) {
+            return;
+        }
+
+        $amount = (int) Arr::get($session, 'amount_total', 0);
+        $customerId = (string) Arr::get($session, 'customer');
+
+        $user->increment('wallet_balance', $amount);
+        if ($customerId && $user->stripe_customer_id !== $customerId) {
+            $user->update(['stripe_customer_id' => $customerId]);
+        }
+
+        $user->walletTransactions()->create([
+            'amount_cents' => $amount,
+            'type' => 'credit',
+            'description' => 'Recarga de saldo vía Stripe',
+            'reference_id' => (string) Arr::get($session, 'id'),
+            'metadata' => $session,
+        ]);
     }
 
     public function updateDemoPaymentProfile(Tenant $tenant, array $profile): void
@@ -348,6 +484,25 @@ class StripeBillingService
             ->asForm()
             ->acceptJson()
             ->post($url, $payload);
+
+        if ($response->failed()) {
+            $message = Arr::get($response->json(), 'error.message', 'Error de Stripe');
+            throw new RuntimeException($message);
+        }
+
+        return $response->json();
+    }
+
+    private function stripeGet(string $path, array $query = []): array
+    {
+        if (!$this->isConfigured()) {
+            throw new RuntimeException('Stripe no está configurado en el backend.');
+        }
+
+        $url = rtrim((string) config('services.stripe.base_url', 'https://api.stripe.com/v1'), '/') . $path;
+        $response = Http::withToken((string) config('services.stripe.secret'))
+            ->acceptJson()
+            ->get($url, $query);
 
         if ($response->failed()) {
             $message = Arr::get($response->json(), 'error.message', 'Error de Stripe');
