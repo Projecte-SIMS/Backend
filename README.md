@@ -30,8 +30,9 @@ php artisan serve
 - `php artisan tenants:list`: Muestra todas las organizaciones registradas.
 
 ## 📄 Documentación Técnica
-- [**Arquitectura de Esquemas**](../docs/arquitectura.md)
-- [**Estrategia de Facturación (Stripe)**](../docs/funcionalidad.md)
+- [**Arquitectura de Esquemas**](https://github.com/Projecte-SIMS/.github/blob/main/profile/docs/arquitectura.md)
+- [**Estrategia de Facturación (Stripe)**](https://github.com/Projecte-SIMS/.github/blob/main/profile/docs/funcionalidad.md)
+- [**Guía de Despliegue**](https://github.com/Projecte-SIMS/.github/blob/main/profile/docs/despliegue.md)
 - [**Referencia de API**](./docs/API_ENDPOINTS.md)
 
 ## 🔐 Seguridad
