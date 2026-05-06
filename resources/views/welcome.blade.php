@@ -60,9 +60,10 @@
             </div>
             <div class="flex items-center gap-8">
                 <div class="hidden md:flex items-center gap-8">
-                    <a href="#caracteristicas" class="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white transition-colors">Características</a>
-                    <a href="#planes" class="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white transition-colors">Planes</a>
+                    <a href="/caracteristicas" class="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white transition-colors">Características</a>
+                    <a href="/planes" class="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white transition-colors">Planes</a>
                     <a href="#video" class="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white transition-colors">Demo</a>
+                    <a href="/faq" class="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white transition-colors">FAQ</a>
                 </div>
                 <a href="{{ $frontendUrl }}/login" class="inline-flex items-center gap-2 bg-brand-primary-600 hover:bg-brand-primary-700 text-white px-7 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-xl shadow-brand-primary-500/30 hover:shadow-brand-primary-500/50 active:scale-95">
                     Acceder
@@ -103,7 +104,7 @@
                             <a href="{{ $frontendUrl }}/empresa/alta" class="inline-flex items-center justify-center gap-2 bg-brand-primary-600 hover:bg-brand-primary-700 text-white px-12 py-6 rounded-[2rem] text-sm font-black uppercase tracking-widest transition-all shadow-[0_20px_50px_-12px_rgba(79,70,229,0.5)] hover:shadow-brand-primary-500/60 active:scale-95">
                                 Crear mi Empresa
                             </a>
-                            <a href="#planes" class="inline-flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-12 py-6 rounded-[2rem] text-sm font-black uppercase tracking-widest transition-all active:scale-95">
+                            <a href="/planes" class="inline-flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-12 py-6 rounded-[2rem] text-sm font-black uppercase tracking-widest transition-all active:scale-95">
                                 Ver Planes
                             </a>
                         </div>
@@ -140,145 +141,6 @@
                                      class="w-full opacity-80 group-hover:opacity-100 transition-opacity duration-700" />
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Features Section -->
-        <div id="caracteristicas" class="py-32 border-t border-gray-800/50 bg-gray-950">
-            <div class="mx-auto max-w-7xl px-6 lg:px-8">
-                <div class="mx-auto max-w-3xl text-center">
-                    <p class="text-[10px] font-black uppercase tracking-[0.4em] text-brand-primary-500 mb-6">Infraestructura de Próxima Generación</p>
-                    <h2 class="text-5xl font-black tracking-tighter text-white sm:text-6xl">
-                        Todo lo que necesitas con tu propia identidad
-                    </h2>
-                    <p class="mt-8 text-xl text-gray-400 font-medium leading-relaxed">
-                        No solo te damos el software. Te damos un ecosistema completo para que lances tu propio negocio de movilidad con tus propios colores y marca.
-                    </p>
-                </div>
-                
-                <div class="mx-auto mt-24 max-w-2xl lg:max-w-none">
-                    <div class="grid grid-cols-1 gap-10 lg:grid-cols-3">
-                        
-                        <!-- Feature 1 -->
-                        <div class="relative p-1 bg-gradient-to-b from-white/10 to-transparent rounded-[3rem] hover:from-brand-primary-500/40 transition-all group">
-                            <div class="h-full bg-gray-950 rounded-[2.9rem] p-10 group-hover:bg-gray-900/50 transition-colors">
-                                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-primary-500/10 text-brand-primary-400 mb-8 group-hover:scale-110 transition-transform">
-                                    <span class="material-icons text-3xl">location_on</span>
-                                </div>
-                                <h3 class="text-2xl font-black text-white uppercase tracking-tight mb-4">Tracking IoT</h3>
-                                <p class="text-gray-500 leading-relaxed font-medium">
-                                    Localización precisa con latencia mínima mediante hardware basado en Raspberry Pi 4.
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Feature 2 -->
-                        <div class="relative p-1 bg-gradient-to-b from-white/10 to-transparent rounded-[3rem] hover:from-green-500/40 transition-all group">
-                            <div class="h-full bg-gray-950 rounded-[2.9rem] p-10 group-hover:bg-gray-900/50 transition-colors">
-                                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-green-500/10 text-green-400 mb-8 group-hover:scale-110 transition-transform">
-                                    <span class="material-icons text-3xl">settings_remote</span>
-                                </div>
-                                <h3 class="text-2xl font-black text-white uppercase tracking-tight mb-4">Telemetría</h3>
-                                <p class="text-gray-500 leading-relaxed font-medium">
-                                    Control de encendido, estado de batería y diagnósticos remotos seguros mediante WebSockets.
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Feature 3 -->
-                        <div class="relative p-1 bg-gradient-to-b from-white/10 to-transparent rounded-[3rem] hover:from-purple-500/40 transition-all group">
-                            <div class="h-full bg-gray-950 rounded-[2.9rem] p-10 group-hover:bg-gray-900/50 transition-colors">
-                                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-400 mb-8 group-hover:scale-110 transition-transform">
-                                    <span class="material-icons text-3xl">palette</span>
-                                </div>
-                                <h3 class="text-2xl font-black text-white uppercase tracking-tight mb-4">Temas de Marca</h3>
-                                <p class="text-gray-500 leading-relaxed font-medium">
-                                    Personaliza los colores del panel para que se alineen perfectamente con la identidad visual de tu empresa.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pricing Section -->
-        <div id="planes" class="py-32 border-t border-gray-800/50 relative overflow-hidden">
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-brand-primary-600/5 blur-[120px] rounded-full"></div>
-            
-            <div class="mx-auto max-w-7xl px-6 lg:px-8 relative z-10">
-                <div class="mx-auto max-w-2xl text-center mb-20">
-                    <p class="text-[10px] font-black uppercase tracking-[0.4em] text-brand-primary-500 mb-6">Planes Flexibles</p>
-                    <h2 class="text-5xl font-black tracking-tighter text-white">Precios transparentes</h2>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-5xl mx-auto">
-                    <!-- Plan Basic -->
-                    <div class="relative p-10 bg-gray-900/40 backdrop-blur-xl rounded-[3rem] border border-white/5 flex flex-col">
-                        <div class="mb-8">
-                            <h3 class="text-xs font-black text-gray-500 uppercase tracking-[0.3em] mb-4">Hub Basic</h3>
-                            <div class="flex items-baseline gap-1">
-                                <span class="text-5xl font-black text-white">49€</span>
-                                <span class="text-gray-500 text-sm font-bold">/mes</span>
-                            </div>
-                        </div>
-                        <ul class="space-y-4 mb-10 flex-1">
-                            <li class="flex items-center gap-3 text-sm text-gray-300 font-medium">
-                                <span class="material-icons text-brand-primary-500 text-sm">check_circle</span>
-                                Hasta 50 vehículos
-                            </li>
-                            <li class="flex items-center gap-3 text-sm text-gray-300 font-medium">
-                                <span class="material-icons text-brand-primary-500 text-sm">check_circle</span>
-                                Gestión de Inquilinos Estándar
-                            </li>
-                            <li class="flex items-center gap-3 text-sm text-gray-300 font-medium">
-                                <span class="material-icons text-brand-primary-500 text-sm">check_circle</span>
-                                Panel Admin Fleetly
-                            </li>
-                            <li class="flex items-center gap-3 text-sm text-gray-500 font-medium line-through">
-                                Colores de Marca Personalizados
-                            </li>
-                        </ul>
-                        <a href="{{ $frontendUrl }}/empresa/alta" class="w-full py-4 text-center rounded-2xl bg-white/5 hover:bg-white/10 text-white text-xs font-black uppercase tracking-widest border border-white/10 transition-all">
-                            Empezar ahora
-                        </a>
-                    </div>
-
-                    <!-- Plan Pro -->
-                    <div class="relative p-10 bg-brand-primary-600 rounded-[3rem] shadow-[0_30px_60px_-15px_rgba(79,70,229,0.4)] flex flex-col transform md:-translate-y-4">
-                        <div class="absolute top-6 right-10">
-                            <span class="bg-white/20 text-white text-[8px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full backdrop-blur-md">Recomendado</span>
-                        </div>
-                        <div class="mb-8">
-                            <h3 class="text-xs font-black text-brand-primary-100 uppercase tracking-[0.3em] mb-4">Pro Business</h3>
-                            <div class="flex items-baseline gap-1">
-                                <span class="text-5xl font-black text-white">79€</span>
-                                <span class="text-brand-primary-200 text-sm font-bold">/mes</span>
-                            </div>
-                        </div>
-                        <ul class="space-y-4 mb-10 flex-1 text-white">
-                            <li class="flex items-center gap-3 text-sm font-medium">
-                                <span class="material-icons text-white text-sm">check_circle</span>
-                                Vehículos ilimitados
-                            </li>
-                            <li class="flex items-center gap-3 text-sm font-medium">
-                                <span class="material-icons text-white text-sm">check_circle</span>
-                                **Colores de Marca Personalizados**
-                            </li>
-                            <li class="flex items-center gap-3 text-sm font-medium">
-                                <span class="material-icons text-white text-sm">check_circle</span>
-                                **Asistente Inteligente IA**
-                            </li>
-                            <li class="flex items-center gap-3 text-sm font-medium">
-                                <span class="material-icons text-white text-sm">check_circle</span>
-                                Soporte Prioritario 24/7
-                            </li>
-                        </ul>
-                        <a href="{{ $frontendUrl }}/empresa/alta" class="w-full py-4 text-center rounded-2xl bg-white text-brand-primary-700 text-xs font-black uppercase tracking-widest shadow-xl hover:bg-gray-50 transition-all active:scale-95">
-                            Elegir Profesional
-                        </a>
                     </div>
                 </div>
             </div>
