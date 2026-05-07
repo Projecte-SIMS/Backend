@@ -50,11 +50,17 @@ class ReservationTest extends TestCase
 
     private function createTestUsers(): void
     {
-        $this->adminUser = User::factory()->create(['email' => 'admin@test.com']);
+        $this->adminUser = User::factory()->create([
+            'email' => 'admin@test.com',
+            'wallet_balance' => 1000,
+        ]);
         $this->adminUser->assignRole('Admin');
         $this->adminToken = $this->adminUser->createToken('test')->plainTextToken;
 
-        $this->clientUser = User::factory()->create(['email' => 'client@test.com']);
+        $this->clientUser = User::factory()->create([
+            'email' => 'client@test.com',
+            'wallet_balance' => 1000,
+        ]);
         $this->clientUser->assignRole('Client');
         $this->clientToken = $this->clientUser->createToken('test')->plainTextToken;
     }
