@@ -154,16 +154,70 @@
                 
                 <div class="mt-20 relative max-w-5xl mx-auto group">
                     <div class="absolute -inset-10 bg-gradient-to-r from-brand-primary-600/20 to-purple-600/20 rounded-[4rem] blur-[80px] group-hover:blur-[100px] transition-all duration-700"></div>
-                    <div class="relative bg-gray-900 rounded-[4rem] border border-white/5 overflow-hidden shadow-2xl">
+                    <div class="relative bg-gray-900 rounded-[4rem] border border-white/5 overflow-hidden shadow-2xl group/carousel">
+                        <!-- Navigation Arrows -->
+                        <button id="prev-video" class="absolute left-6 top-1/2 -translate-y-1/2 z-20 size-12 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-all hover:bg-brand-primary-600 hover:scale-110 active:scale-95">
+                            <span class="material-icons">chevron_left</span>
+                        </button>
+                        <button id="next-video" class="absolute right-6 top-1/2 -translate-y-1/2 z-20 size-12 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-white flex items-center justify-center opacity-0 group-hover/carousel:opacity-100 transition-all hover:bg-brand-primary-600 hover:scale-110 active:scale-95">
+                            <span class="material-icons">chevron_right</span>
+                        </button>
+
                         <video 
+                            id="fleetly-video-player"
                             class="w-full aspect-video object-cover" 
                             controls 
                             preload="metadata"
                         >
-                            <source src="/anuncio_fleetly.mp4#t=0.001" type="video/mp4">
+                            <source id="video-source" src="/anuncio_fleetly.mp4#t=0.001" type="video/mp4">
                             Tu navegador no soporta el elemento de video.
                         </video>
                     </div>
+
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const video = document.getElementById('fleetly-video-player');
+                            const source = document.getElementById('video-source');
+                            const prevBtn = document.getElementById('prev-video');
+                            const nextBtn = document.getElementById('next-video');
+                            
+                            const playlist = [
+                                '/anuncio_fleetly.mp4',
+                                '/registrate_fleetly.mp4'
+                            ];
+                            let currentTrack = 0;
+                            let autoTimer = null;
+
+                            function loadVideo(index, play = true) {
+                                currentTrack = index;
+                                source.src = playlist[currentTrack] + (play ? '' : '#t=0.001');
+                                video.load();
+                                if (play) {
+                                    video.play().catch(e => console.log("Autoplay blocked or interrupted"));
+                                }
+                            }
+
+                            video.addEventListener('ended', function() {
+                                // Esperar 3 segundos antes de pasar al siguiente
+                                autoTimer = setTimeout(() => {
+                                    let nextIndex = (currentTrack + 1) % playlist.length;
+                                    loadVideo(nextIndex);
+                                }, 3000);
+                            });
+
+                            prevBtn.addEventListener('click', () => {
+                                clearTimeout(autoTimer);
+                                let prevIndex = (currentTrack - 1 + playlist.length) % playlist.length;
+                                loadVideo(prevIndex);
+                            });
+
+                            nextBtn.addEventListener('click', () => {
+                                clearTimeout(autoTimer);
+                                let nextIndex = (currentTrack + 1) % playlist.length;
+                                loadVideo(nextIndex);
+                            });
+                        });
+                    </script>
                 </div>
             </div>
         </div>
