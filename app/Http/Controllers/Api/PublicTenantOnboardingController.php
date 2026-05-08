@@ -88,10 +88,10 @@ class PublicTenantOnboardingController extends Controller
                 'entity_type' => $validated['entity_type'],
                 'company_name' => $validated['company_name'],
                 'tax_id' => $validated['tax_id'],
-                'phone' => $validated['phone'],
-                'address' => $validated['address'],
-                'city' => $validated['city'],
-                'postal_code' => $validated['postal_code'],
+                'phone' => $validated['phone'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'city' => $validated['city'] ?? null,
+                'postal_code' => $validated['postal_code'] ?? null,
             ]);
 
             $tenant->run(function () use ($validated) {

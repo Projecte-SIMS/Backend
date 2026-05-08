@@ -17,8 +17,8 @@ Este documento detalla todos los componentes, librerías, herramientas y servici
 | **PostgreSQL 15** | Base de datos relacional principal. Gestiona datos centrales (inquilinos, dominios) y datos de inquilino (usuarios, roles, reservas, tiquets) mediante esquemas aislados. |
 | **MongoDB Atlas** | Almacenamiento NoSQL escalable para telemetría, logs de actividad masiva y geolocalización histórica de vehículos. |
 | **laravel-mongodb** | Driver para integrar Eloquent con MongoDB, permitiendo el uso de modelos sobre colecciones NoSQL de telemetría. |
-| **PostgreSQL Schema Manager** | Componente de Tenancy encargado de la creación y gestión dinámica de esquemas para cada inquilino. |
-| **Redis** | Utilizado opcionalmente para caché y gestión de colas (definido en config/database.php). |
+| **Stancl Tenancy Schema Manager** | Componente de Tenancy encargado de la creación y gestión dinámica de esquemas para cada inquilino. |
+| **Redis** | No configurado en este repo (reservado para cache/colas en despliegues futuros). |
 
 ## 3. Arquitectura Multi-inquilino (Multitenancy)
 
@@ -71,5 +71,5 @@ Aunque el proyecto es principalmente un backend, cuenta con herramientas para la
 | **Docker Compose** | Orquestación de servicios (App, PostgreSQL, pgAdmin). |
 | **Render** | Plataforma de despliegue en la nube utilizada para el entorno de producción. |
 | **pgAdmin 4** | Interfaz web para la administración visual de la base de datos PostgreSQL. |
-| **Laravel Sail** | Entorno de desarrollo ligero basado en Docker integrado en Laravel. |
+| **Laravel Sail** | No utilizado en este repositorio (se usa Docker Compose propio). |
 | **Laravel Tinker** | Entorno REPL para interactuar con la aplicación y la base de datos desde la línea de comandos. |

@@ -47,7 +47,7 @@ class AdminMiddlewareTest extends TestCase
 
         $response = $this->withHeader('Authorization', "Bearer {$token}")
                          ->getJson('/api/admin/users');
-
+        $response->dump();
         $response->assertStatus(200);
     }
 
@@ -61,7 +61,7 @@ class AdminMiddlewareTest extends TestCase
                          ->getJson('/api/admin/users');
 
         $response->assertStatus(403)
-                 ->assertJson(['message' => 'Unauthorized. Admin access required.']);
+                 ->assertJson(['message' => 'No autorizado. Se requiere acceso de administrador.']);
     }
 
     public function test_unauthenticated_cannot_access_admin_routes(): void
