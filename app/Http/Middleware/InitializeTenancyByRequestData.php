@@ -32,7 +32,7 @@ class InitializeTenancyByRequestData
         if (!$tenantId) {
             return response()->json([
                 'success' => false,
-                'message' => 'Tenant no especificado. Usa header X-Tenant o query param ?tenant=',
+                'message' => 'No se ha podido identificar la empresa. Por favor, asegúrate de acceder a través de un dominio válido.',
             ], 400);
         }
 
@@ -44,7 +44,7 @@ class InitializeTenancyByRequestData
         if (!$tenant) {
             return response()->json([
                 'success' => false,
-                'message' => "Tenant '{$tenantId}' no encontrado",
+                'message' => 'La empresa solicitada no existe o no se encuentra activa en nuestro sistema.',
             ], 404);
         }
 
