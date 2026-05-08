@@ -76,6 +76,11 @@ class TenantSanctumAuth
             if (!$userModel) {
                 return response()->json(['message' => 'No autenticado.'], 401);
             }
+
+            // Attach the token to the user model so currentAccessToken() works
+            $tokenModel = new PersonalAccessToken((array) $accessToken);
+            $tokenModel->exists = true;
+            $userModel->withAccessToken($tokenModel);
             
             // Set the authenticated user
             auth()->setUser($userModel);
