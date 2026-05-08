@@ -155,18 +155,14 @@
                 <div class="mt-20 relative max-w-5xl mx-auto group">
                     <div class="absolute -inset-10 bg-gradient-to-r from-brand-primary-600/20 to-purple-600/20 rounded-[4rem] blur-[80px] group-hover:blur-[100px] transition-all duration-700"></div>
                     <div class="relative bg-gray-900 rounded-[4rem] border border-white/5 overflow-hidden shadow-2xl">
-                        <div class="aspect-video flex items-center justify-center bg-slate-900/50">
-                            <div class="text-center px-8">
-                                <button class="group/play relative size-24 mx-auto mb-10 rounded-full bg-brand-primary-600 flex items-center justify-center shadow-[0_20px_40px_-10px_rgba(79,70,229,0.5)] hover:scale-110 transition-all duration-300">
-                                    <div class="absolute inset-0 rounded-full bg-brand-primary-500 animate-ping opacity-20"></div>
-                                    <svg class="w-10 h-10 text-white ml-1 relative z-10" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M8 5v14l11-7z"/>
-                                    </svg>
-                                </button>
-                                <p class="text-white text-xl font-black uppercase tracking-[0.2em] mb-4">Reproducir Showcase</p>
-                                <p class="text-gray-500 text-sm font-bold uppercase tracking-widest italic">Movilidad Conectada &middot; Fleetly Hub</p>
-                            </div>
-                        </div>
+                        <video 
+                            class="w-full aspect-video object-cover" 
+                            controls 
+                            preload="metadata"
+                        >
+                            <source src="/anuncio_fleetly.mp4#t=0.001" type="video/mp4">
+                            Tu navegador no soporta el elemento de video.
+                        </video>
                     </div>
                 </div>
             </div>
