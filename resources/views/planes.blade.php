@@ -18,7 +18,7 @@
             </a>
             <div class="flex items-center gap-8">
                 <a href="/" class="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white transition-colors">Volver</a>
-                <a href="https://frontend-phi-seven-21.vercel.app/login" class="inline-flex items-center gap-2 bg-brand-primary-600 hover:bg-brand-primary-700 text-white px-7 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all">Acceder</a>
+                <a href="https://fleetly.deltahost.asix2.iesmontsia.cat/login" class="inline-flex items-center gap-2 bg-brand-primary-600 hover:bg-brand-primary-700 text-white px-7 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all">Acceder</a>
             </div>
         </div>
     </nav>
@@ -58,7 +58,7 @@
                             Colores de Marca Personalizados
                         </li>
                     </ul>
-                    <a href="https://frontend-phi-seven-21.vercel.app/empresa/alta" class="w-full py-6 text-center rounded-[2rem] bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase tracking-widest text-xs transition-all">Empezar con Basic</a>
+                    <a href="https://fleetly.deltahost.asix2.iesmontsia.cat/empresa/alta" class="w-full py-6 text-center rounded-[2rem] bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase tracking-widest text-xs transition-all">Empezar con Basic</a>
                 </div>
 
                 <!-- Pro Business -->
@@ -92,7 +92,7 @@
                             Soporte Prioritario
                         </li>
                     </ul>
-                    <a href="https://frontend-phi-seven-21.vercel.app/empresa/alta" class="w-full py-6 text-center rounded-[2rem] bg-white text-brand-primary-600 font-black uppercase tracking-widest text-xs shadow-xl hover:bg-gray-100 transition-all active:scale-95">Elegir Pro Business</a>
+                    <a href="https://fleetly.deltahost.asix2.iesmontsia.cat/empresa/alta" class="w-full py-6 text-center rounded-[2rem] bg-white text-brand-primary-600 font-black uppercase tracking-widest text-xs shadow-xl hover:bg-gray-100 transition-all active:scale-95">Elegir Pro Business</a>
                 </div>
             </div>
 

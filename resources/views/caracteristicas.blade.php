@@ -18,7 +18,7 @@
             </a>
             <div class="flex items-center gap-8">
                 <a href="/" class="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white transition-colors">Volver</a>
-                <a href="https://frontend-phi-seven-21.vercel.app/login" class="inline-flex items-center gap-2 bg-brand-primary-600 hover:bg-brand-primary-700 text-white px-7 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all">Acceder</a>
+                <a href="https://fleetly.deltahost.asix2.iesmontsia.cat/login" class="inline-flex items-center gap-2 bg-brand-primary-600 hover:bg-brand-primary-700 text-white px-7 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all">Acceder</a>
             </div>
         </div>
     </nav>

@@ -277,7 +277,7 @@
       "key": "base_url",
       "value": "http://localhost:8000",
       "type": "string",
-      "description": "URL base de la API - Cambiar para Render: https://sims-backend-api-0b2w.onrender.com"
+      "description": "URL base de la API - Cambiar para Servidor: https://landing.fleetly.deltahost.asix2.iesmontsia.cat"
     },
     {
       "key": "token",

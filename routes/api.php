@@ -16,7 +16,7 @@ use App\Http\Controllers\Api\CentralSettingsController;
 | These routes are loaded by the RouteServiceProvider within a group which
 | is assigned the "api" middleware group.
 |
-| These routes are only accessible from central domains (localhost, 127.0.0.1, sims-backend-api-0b2w.onrender.com)
+| These routes are only accessible from central domains (localhost, 127.0.0.1, landing.fleetly.deltahost.asix2.iesmontsia.cat)
 |
 */
 

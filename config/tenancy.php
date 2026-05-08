@@ -19,7 +19,7 @@ return [
     'central_domains' => array_filter([
         '127.0.0.1',
         'localhost',
-        env('CENTRAL_DOMAIN'), // e.g., sims-backend-api-0b2w.onrender.com
+        env('CENTRAL_DOMAIN'), // e.g., fleetly.deltahost.asix2.iesmontsia.cat
     ], fn($domain) => !empty($domain)), // Only filter out null/empty strings
 
     /**

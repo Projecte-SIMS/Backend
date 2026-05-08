@@ -6,7 +6,7 @@ Este documento detalla la conexión técnica entre todos los subsistemas del pro
 
 ## 1. Integración Backend ↔ Frontend
 - **Frontend (Vercel)**: La aplicación Vue 3 se comunica con la API de Laravel (Render) a través de peticiones asíncronas de Axios.
-- **Header X-Tenant**: El frontend detecta el identificador de la organización en la URL (ej. ?tenant=feetly) y lo inyecta automáticamente en todas las peticiones para que el backend active el esquema de datos correcto.
+- **Header X-Tenant**: El frontend detecta el identificador de la organización en la URL (ej. ?tenant=fleetly) y lo inyecta automáticamente en todas las peticiones para que el backend active el esquema de datos correcto.
 - **Autenticación Cruzada**: Se utilizan tokens de Sanctum almacenados en cookies seguras para mantener la sesión del usuario dentro de su propio esquema organizacional.
 
 ---

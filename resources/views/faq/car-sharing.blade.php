@@ -35,7 +35,7 @@
                             </summary>
                             <div class="px-6 pb-6 text-gray-400">
                                 <p class="mb-4">Descarga la app, sube tu DNI y carnet de conducir. Validaremos tu perfil en menos de 24 horas mediante nuestro sistema de verificación automática.</p>
-                                <a href="https://frontend-phi-seven-21.vercel.app/registro" class="text-brand-primary-400 hover:underline font-bold">Ir a Registro de Usuario →</a>
+                                <a href="https://fleetly.deltahost.asix2.iesmontsia.cat/registro" class="text-brand-primary-400 hover:underline font-bold">Ir a Registro de Usuario →</a>
                             </div>
                         </details>
                         <details class="group bg-gray-900/50 rounded-2xl border border-white/5">

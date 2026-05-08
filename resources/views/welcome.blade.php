@@ -46,7 +46,7 @@
 <body class="antialiased bg-gray-950 text-white font-sans">
     
     @php
-        $frontendUrl = 'https://frontend-phi-seven-21.vercel.app';
+        $frontendUrl = 'https://fleetly.deltahost.asix2.iesmontsia.cat';
     @endphp
 
     <!-- Navbar -->

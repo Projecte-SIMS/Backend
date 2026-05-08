@@ -35,7 +35,7 @@
                             </summary>
                             <div class="px-6 pb-6 text-gray-400">
                                 <p class="mb-4">El proceso es 100% digital. Una vez completes el alta, nuestro sistema creará tu instancia multi-tenant de forma automática.</p>
-                                <a href="https://frontend-phi-seven-21.vercel.app/empresa/alta" class="inline-flex items-center gap-2 bg-brand-primary-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-brand-primary-700 transition-all">
+                                <a href="https://fleetly.deltahost.asix2.iesmontsia.cat/empresa/alta" class="inline-flex items-center gap-2 bg-brand-primary-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-brand-primary-700 transition-all">
                                     Darse de alta ahora →
                                 </a>
                             </div>
