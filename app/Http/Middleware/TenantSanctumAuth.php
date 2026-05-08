@@ -17,13 +17,13 @@ class TenantSanctumAuth
         $token = $request->bearerToken();
         
         if (!$token) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
+            return response()->json(['message' => 'No autenticado.'], 401);
         }
         
         if (app()->environment('testing') && !tenancy()->initialized) {
             $accessToken = PersonalAccessToken::findToken($token);
             if (!$accessToken || !$accessToken->tokenable) {
-                return response()->json(['message' => 'Unauthenticated.'], 401);
+                return response()->json(['message' => 'No autenticado.'], 401);
             }
 
             $user = $accessToken->tokenable;
@@ -37,13 +37,13 @@ class TenantSanctumAuth
 
         // Ensure tenant is initialized (should be from tenant.init middleware)
         if (!tenancy()->initialized) {
-            return response()->json(['message' => 'Tenant not initialized.'], 400);
+            return response()->json(['message' => 'Tenant no inicializado.'], 400);
         }
         
         // Sanctum tokens are in format: ID|HASH
         // We need to extract the HASH part and hash it to compare with DB
         if (strpos($token, '|') === false) {
-            return response()->json(['message' => 'Invalid token format.'], 401);
+            return response()->json(['message' => 'Formato de token no válido.'], 401);
         }
         
         [$id, $hash] = explode('|', $token, 2);
@@ -58,7 +58,7 @@ class TenantSanctumAuth
                 ->first();
             
             if (!$accessToken) {
-                return response()->json(['message' => 'Unauthenticated.'], 401);
+                return response()->json(['message' => 'No autenticado.'], 401);
             }
             
             // Load the user from the token
@@ -68,13 +68,13 @@ class TenantSanctumAuth
                 ->first();
             
             if (!$user) {
-                return response()->json(['message' => 'Unauthenticated.'], 401);
+                return response()->json(['message' => 'No autenticado.'], 401);
             }
             
             // Convert to User model
             $userModel = \App\Models\User::hydrate([$user])->first();
             if (!$userModel) {
-                return response()->json(['message' => 'Unauthenticated.'], 401);
+                return response()->json(['message' => 'No autenticado.'], 401);
             }
             
             // Set the authenticated user
@@ -88,7 +88,7 @@ class TenantSanctumAuth
                 'tenant' => tenancy()->tenant->id ?? 'unknown',
             ]);
             return response()->json([
-                'message' => 'Tenant database error. Schema may not exist.',
+                'message' => 'Error en la base de datos del tenant. Es posible que el esquema no exista.',
                 'detail' => $e->getMessage()
             ], 500);
         } catch (\Exception $e) {
@@ -97,7 +97,7 @@ class TenantSanctumAuth
                 'tenant' => tenancy()->tenant->id ?? 'unknown',
             ]);
             return response()->json([
-                'message' => 'Authentication error',
+                'message' => 'Error de autenticación',
                 'detail' => $e->getMessage()
             ], 500);
         }

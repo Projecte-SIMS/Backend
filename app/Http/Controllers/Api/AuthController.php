@@ -22,20 +22,20 @@ class AuthController extends Controller
 
             if (!$user || !Hash::check($request->password, $user->password)) {
                 throw ValidationException::withMessages([
-                    'email' => ['Incorrect credentials.'],
+                    'email' => ['Credenciales incorrectas.'],
                 ]);
             }
 
             if (!$user->active) {
                 return response()->json([
-                    'message' => 'User inactive.'
+                    'message' => 'Usuario inactivo.'
                 ], 403);
             }
 
             $token = $user->createToken('api-token')->plainTextToken;
 
             return response()->json([
-                'message' => 'Login successful',
+                'message' => 'Inicio de sesión exitoso',
                 'token' => $token,
                 'user' => $user,
             ]);
@@ -43,9 +43,9 @@ class AuthController extends Controller
             throw $e;
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Error during login',
+                'message' => 'Error durante el inicio de sesión',
                 'error' => $e->getMessage(),
-                'tenant' => tenancy()->initialized ? tenancy()->tenant->id : 'not initialized',
+                'tenant' => tenancy()->initialized ? tenancy()->tenant->id : 'no inicializado',
             ], 500);
         }
     }
@@ -73,7 +73,7 @@ class AuthController extends Controller
         $token = $user->createToken('api-token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Registration successful',
+            'message' => 'Registro exitoso',
             'token' => $token,
             'user' => $user,
         ], 201);
@@ -84,7 +84,7 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
-            'message' => 'Logout successful'
+            'message' => 'Cierre de sesión exitoso'
         ]);
     }
 
